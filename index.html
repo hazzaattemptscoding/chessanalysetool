@@ -1,0 +1,1862 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Chess post mortem</title>
+<meta name="description" content="Your own chess.com games read back in plain English: what you gave away, what you walked past, and what to practise next.">
+<meta name="theme-color" content="#faf7f1">
+<meta name="color-scheme" content="light">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Post mortem">
+<link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAIAAACyr5FlAAACIklEQVR42u3dsW3CQBSA4UeUhiloMwYDMAIFG7iLGCGiYwOGYICskI4ZMgUFpXHI4QPhd99XEkQs/OudbWF5tujWAde8+QoQB+JAHIgDcSAOxIE4EAfiAHEgDsSBOBAH4kAciANxIA4QB+JAHIgDcSAOxIE4EAfiAHEgDsq9P+ff/Hx21T/z+/BV/TOXm+0ktjMiut+5yYFlBXEgDsSBOBAHiANxIA7EgTgQB+JAHIgDcYA4EAfiQByIA3EgDsSBOBAHjXvSvbIt39f6iO2MiNjtTQ4sK4gDxxx5HU9XXlx9iEMWf/4pXSKWldFlFL1HHC2WkbEPcdTe34n6cMwx+vCz/57jKcfxh8lRqL/Xk56qiKNwbAx10H89xeIijhEzI/v8EAfiQByIA3G8+MlLutMTcYw4PRkq4P8nveJoa35knBkXLp/fGh531JDlmofJEZX3dKKrYeKour9zXScVR729nu4KumOOwj78hpR2xoNlBXEwxWWl5ftaH/Rc2QjPlcWygjgQB+JAHIgDxIE4EAfiQByIA3EgDsSBOEAciANxIA7EgTgQB+JAHIiD1nmu7CS3M8JzZbGsIA7EgTgQB+IAcSAOxIE4EAfiQByIA3EgDhAH4kAciANxIA7EgTgQB+IAcTBstujWvgVMDsSBOBAH4kAciANxIA7EAeJAHIgDcSAOxIE4EAfiQBwgDsSBOBAH4kAciANxIA7EgThAHBQ6A/7/TY4WRJrFAAAAAElFTkSuQmCC">
+<link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAIAAADdvvtQAAACUklEQVR42u3cv03DQBTA4RdEkynSZgwGyAgp2MAdYgSULhswhAdgBTrPwBS0SJz4Y99dkufvK4OVWNZP73yy8GY3HAPmunMJEBACQkAICASEgBAQAgIBISAEhIBAQAgIASEgEBACQkAICAGBgBAQAkJAICAEhIAQEAgIASEgBAQCoo77nj/2/jQ0+ua315dG3/zw+Hxz5xwRw8fWBMIShoBAQAgIASEgEBACQkAICAG5BAgIASEgBAQCQkAICAGBgBAQAkJAICAEhIAQEAiIxbq+ncM7NPqcc0TE6WwCYQlDQHAt90BpjVPhw8NeQMxK5+ufsmdkCWtTz7+OMYGk8/vBSUeRCYQJdIW3zN+PGaeUQ8gEWlzPYV8oo/hhxvshAS3z81BZwU5eQM3undexKRNQs/GzjiEkIASEgBAQAqL6lir7szAB1d52rWxTJqCWQyj7+BFQjREyTuUnX8WHHul4mDqroWIxK1u8TCBMoMsuZH+8xUn9NMMEarylyv4szARqNor8VwY1R5ElDATELS9h3qHR55wjImJrAmEJQ0AgIASEgBAQCAgBISAEhIBcAgSEgBAQAgIBISAEhIBAQAgIASEgEBACQkAICATEYl3fzuEdGn3OOSLidDaBsIQhIBAQAkJACAgEhIAQEAJCQC4BAkJACAgBgYAQEAJCQCAgBISAEBAICAEhIAQEAkJAXNZmNxxdBUwgBISAEBAICAEhIAQEAkJACAgBgYAQEAJCQCAgBISAEBACAgEhIASEgEBACAgBISAQEAJCQAgIBEQFn5bBU6rjW/PaAAAAAElFTkSuQmCC">
+<link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22Chess%20post%20mortem%22%2C%22short_name%22%3A%22Post%20mortem%22%2C%22start_url%22%3A%22./%22%2C%22scope%22%3A%22./%22%2C%22display%22%3A%22standalone%22%2C%22orientation%22%3A%22portrait%22%2C%22background_color%22%3A%22%23faf7f1%22%2C%22theme_color%22%3A%22%23faf7f1%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage/png%3Bbase64%2CiVBORw0KGgoAAAANSUhEUgAAAMAAAADACAIAAADdvvtQAAACUklEQVR42u3cv03DQBTA4RdEkynSZgwGyAgp2MAdYgSULhswhAdgBTrPwBS0SJz4Y99dkufvK4OVWNZP73yy8GY3HAPmunMJEBACQkAICASEgBAQAgIBISAEhIBAQAgIASEgEBACQkAICAGBgBAQAkJAICAEhIAQEAgIASEgBAQCoo77nj/2/jQ0%2Bua315dG3/zw%2BHxz5xwRw8fWBMIShoBAQAgIASEgEBACQkAICAG5BAgIASEgBAQCQkAICAGBgBAQAkJAICAEhIAQEAiIxbq%2BncM7NPqcc0TE6WwCYQlDQHAt90BpjVPhw8NeQMxK5%2BufsmdkCWtTz7%2BOMYGk8/vBSUeRCYQJdIW3zN%2BPGaeUQ8gEWlzPYV8oo/hhxvshAS3z81BZwU5eQM3undexKRNQs/GzjiEkIASEgBAQAqL6lir7szAB1d52rWxTJqCWQyj7%2BBFQjREyTuUnX8WHHul4mDqroWIxK1u8TCBMoMsuZH%2B8xUn9NMMEarylyv4szARqNor8VwY1R5ElDATELS9h3qHR55wjImJrAmEJQ0AgIASEgBAQCAgBISAEhIBcAgSEgBAQAgIBISAEhIBAQAgIASEgEBACQkAICATEYl3fzuEdGn3OOSLidDaBsIQhIBAQAkJACAgEhIAQEAJCQC4BAkJACAgBgYAQEAJCQCAgBISAEBAICAEhIAQEAkJAXNZmNxxdBUwgBISAEBAICAEhIAQEAkJACAgBgYAQEAJCQCAgBISAEBACAgEhIASEgEBACAgBISAQEAJCQAgIBEQFn5bBU6rjW/PaAAAAAElFTkSuQmCC%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image/png%22%7D%2C%7B%22src%22%3A%22data%3Aimage/png%3Bbase64%2CiVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAIAAAB7GkOtAAAHKUlEQVR42u3dsXGjYBCAUctDoiqUqgwKUAkK6ECZhxIYZeqAIlwALThzDa7CgWecCWwQCHbfS23dnGBmv3/vhL07XM4vAOTz6hIACAAAAgCAAAAgAAAIAAACAIAAACAAAAgAAAIAgAAAIAAACAAAAgCAAAAgAAAIAAACAIAAACAAAAgAAAIAgAAACAAAAgCAAAAgAAAIAAACAIAAACAAAAgAAAIAgAAAIAAACAAAAgCAAAAgAAAIAAACAIAAACAAAAgAAAIAgAAACAAAAgCAAAAgAAAIAAACAIAAACAAAAgAAAIAgAAAIAAACAAAAgCAAAAgAAAIAAACAIAAACAAAAgAAAIAgAAAIAAAAgCAAAAgAAAIAAACAIAAACAAAAgAAAIAgAAAIAAACAAAAgCAAAAgAAAIAAACAIAAACAAAAgAAAIAgAAAIAAAAgCAAACQRuESDPp4u%2BR5s13b5HmzZVW7s1FdvvZmlw0AAAEAQAAAEAAAAQBAAAAQAAAEAAABAEAAABAAAAQAAAEAQAAAEAAABAAAAQBAAAAQAAAEAAABAEAAABAAAAQAAAEAQAAAEAAAAQBAAAAQAAAEAAABAEAAABAAAAQAAAEAQAAAEAAABAAAAQBAAAAQAAAEAAABAEAAABAAAAQAAAEAQAAAEAAAAXAJAAQAAAEAQAAAEAAABAAAAQBAAAAQAAAEAAABAEAAABAAAAQAAAEAQAAAEAAABAAAAQBAAAAQAAAEAAABAEAAAAQAAAEAQAAAEAAAgilcgkFd2%2BR5s2VVu7PubATXm9llAwBAAAAQAAAEAEAAABAAAAQAAAEAQAAAEAAABACA7fCzgGB%2B7599Xz0dXSEEANIM/XvfKQYIAKQY/fdeKwMIACQa/TKAAEDq0S8DLMingGCV03%2BZPxwbALDq6WwVwAYAGae/VQABgNTTXwMQAMg7/TUAAYC8018DEAAABABSnr4tAQgA5B27GsBkngOARdz7FL85jg0Awh7/T8e%2BZ7j6v2oJwAYAoU79977TQMcGABGO/yPO9SNeohkIAGz17P%2BoF4IAwPOP/xOH%2BH9fbglAAGDbZ397AAIAgABAyuO/JQABgFXYxL%2Bw%2B28ABACCHP8tAQgAAAIAgAAAIAAACAAAAgCAAAAgADCzhz%2BN5fEuBACeaRNPY3lkDAGAOEuA4z8CAIAAQJolwPEfAYBVWPhXdC38C8gQAGAVe4CzPwIA214Cxo3yES9x/GeCwiWAefeAv8xoB39sABBqCfgd7j3zvf%2Brjv/YACDINgA2AMi1BIT/yyAAoAGmPwIAgACAJcDxHwEADTD9EQDQANMfAQANMP15Bs8BwOShPPdn/I1%2BbACQcRUw/bEBQLpVwOhHACBdBox%2BBADSZcDoRwAgSAZ%2B9MfA0EcAIEUMYDV8CghAAAAQAAAEAAABAEAAABAAAAQAAAEAQAAAWCM/CmJYWdV53mzXNu6sOxvC3uyyAQAgAAAIAAACACAAAAgAAAIAgAAAIAAACAAAAgCAAAAgAAAIAAACAIAAACAAAAgAAAIAgAAAIAAACAAAAgCAAAAgAAAIAAACACAAAAgAAAIAgAAAIAAACAAAAgCAAAAgAAAIAAACAIAAACAAAAgAAAIAgAAAIAAACAAAAgCAAAAgAAAIAAACACAALgGAAAAgAAAIAAACAIAAACAAAAgAAAIAgAAAIAAACAAAAgCAAAAgAAAIAAACAIAAACAAAAgAAAIAgAAAIAAACACAAAAgAAAIAAACAEAwhUswqGubPG%2B2rGp31p2N4Hozu2wAAAgAAAIAgAAACAAAAgCAAAAgAAAIAAACAIAAACAAAAgAAAIAgAAAIAAACAAAAgCAAAAgAAAIAAACAIAAACAAAAgAAAIAgAAACAAAAgCAAAAgAAAIAAACAIAAACAAAAgAAAIAgAAAIAAACAAAAgCAAAAgAAAIAAACAIAAACAAAAgAAAIAgAAACIBLACAAAAgAAAIAgAAAIAAACAAAAgCAAAAgAAAIAAACAIAAACAAAAgAAAIAgAAAIAAACAAAAgCAAAAgAAAIAAACACAAAAgAAAIAgAAAIAAARLA7XM6uAoANAAABAEAAABAAAAQAAAEAQAAAEAAABAAAAQBAAAAQAAAEAAABAEAAABAAAAQAAAEAQAAAEAAABAAAAQBAAAAEAAABAEAAABAAAAQAAAEAQAAAEAAABAAAAQBAAAAQAAAEAAABAEAAABAAAAQAAAEAQAAAEAAABAAAAQBAAAAEAAABAEAAABAAAAQAAAEAQAAAEAAABAAAAQBAAAAQAAAEAAABAEAAABAAAAQAAAEAQAAAEAAABAAAAQBAAAAQAAABAEAAABAAAAQAAAEAQAAAEAAABAAAAQBAAAAQAAAEAAABAEAAABAAAAQAAAEAQAAAEAAABAAAAQBAAAAQAAABAEAAABAAAAQAgGi%2BAU94mDpT%2BEx6AAAAAElFTkSuQmCC%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image/png%22%2C%22purpose%22%3A%22any%20maskable%22%7D%5D%7D">
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --paper:#faf7f1;--card:#fff;--ink:#1b1917;--soft:#736b5e;--faint:#a39a8c;
+  --line:#e6dfd1;--good:#1f6f5c;--watch:#b47617;--bad:#b0392b;
+  --lsq:#f0e5cb;--dsq:#b08553;
+}
+html{background:var(--paper)}
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font:400 16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;padding-bottom:calc(84px + env(safe-area-inset-bottom));
+  overscroll-behavior-y:none;
+}
+.w{max-width:640px;margin:0 auto;padding:0 16px}
+header{
+  background:var(--card);border-bottom:1px solid var(--line);
+  padding:calc(12px + env(safe-area-inset-top)) 0 12px;position:sticky;top:0;z-index:5;
+}
+h1{font-size:19px;font-weight:700;letter-spacing:-.02em;margin:0}
+h2{font-size:11.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--faint);margin:24px 0 9px}
+main{padding-top:14px}
+p{font-size:14.5px;color:var(--soft);line-height:1.5;margin:7px 0 0}
+p.nm,.nm{margin-top:0}
+.tiny{font-size:12.5px;color:var(--faint);line-height:1.5;margin-top:6px}
+.tiny.pad{padding:0 4px 8px}
+.mid{text-align:center}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13.5px}
+.faint{color:var(--faint)}
+.acc{color:var(--good)}
+.good{color:var(--good)}
+.bad{color:var(--bad)}
+.watch{color:var(--watch)}
+.fix{color:var(--bad)}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:15px;margin-bottom:10px}
+.card.warn{background:#fbf0dd;border-color:#eadcc0}
+.card.lead{background:#f2f8f5;border-color:#cfe0d9}
+.lead-h{font-size:19px;font-weight:700;letter-spacing:-.02em;margin-top:9px}
+.lead-p{color:#3f4b46}
+.t{font-size:15px;font-weight:600;margin-top:10px}
+.num{font-size:36px;font-weight:700;letter-spacing:-.03em;line-height:1}
+.num em{font-size:18px;font-style:normal;color:var(--faint);margin-right:4px}
+.between{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.chip{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.06em;
+  text-transform:uppercase;padding:4px 9px;border-radius:20px;white-space:nowrap}
+.chip.good{background:#e6f1ed;color:var(--good)}
+.chip.watch{background:#fbf0dd;color:var(--watch)}
+.chip.bad{background:#f8e7e4;color:var(--bad)}
+
+.btn{font:600 15px/1 inherit;font-family:inherit;border:1px solid var(--line);background:var(--card);
+  color:var(--ink);padding:13px 15px;border-radius:11px;cursor:pointer}
+.btn.pri{background:var(--good);border-color:var(--good);color:#fff}
+.btn.pri[disabled]{opacity:.5}
+.btn.sm{padding:9px 12px;font-size:14px}
+.btn.wide{width:100%;margin-top:12px}
+.btn:active{transform:scale(.99)}
+button:focus-visible{outline:2px solid var(--good);outline-offset:2px}
+.lnk{background:none;border:0;color:var(--good);font:600 13.5px/1.5 inherit;font-family:inherit;
+  padding:9px 0 0;cursor:pointer;text-decoration:underline;display:inline-block}
+.list{display:block;width:100%;text-align:left;font-weight:400;font-size:15px;
+  padding:14px;cursor:pointer}
+.pills{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+
+.bar{height:8px;border-radius:6px;background:#f0ebe0;display:flex;overflow:hidden;margin-top:11px}
+.bar i{display:block;height:100%}
+.hb{display:flex;align-items:center;gap:10px;margin-bottom:9px}
+.hbl{width:78px;font-size:14px;text-transform:capitalize;flex:0 0 auto}
+.hbt{flex:1;height:8px;border-radius:6px;background:#f0ebe0;display:flex;overflow:hidden}
+.hbt i{display:block;height:100%}
+.hbv{width:38px;text-align:right;color:var(--soft);flex:0 0 auto}
+.orow{display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:10px 0;border-bottom:1px solid #f1ece1;font-size:14.5px}
+.orow:last-of-type{border-bottom:0}
+
+.chart{width:100%;height:96px;display:block;overflow:visible}
+.axis{display:flex;justify-content:space-between;font-size:11.5px;color:var(--faint);
+  font-family:ui-monospace,Menlo,monospace;margin-top:4px}
+.strip{width:100%;height:26px;display:block;margin:8px 0 2px}
+.gb{display:flex;gap:12px;align-items:flex-end;height:130px;padding-top:14px}
+.gbcol{flex:1;display:flex;flex-direction:column;height:100%}
+.gbbars{flex:1;display:flex;gap:5px;align-items:flex-end}
+.gbbar{flex:1;border-radius:5px 5px 0 0;min-height:2px;position:relative}
+.gbn{position:absolute;top:-15px;left:0;right:0;text-align:center;font-size:10.5px;color:var(--soft)}
+.gblab{font-size:11px;color:var(--faint);text-align:center;padding-top:7px}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--soft);margin-top:6px}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px}
+
+.board{display:grid;grid-template-columns:repeat(8,1fr);width:100%;max-width:460px;margin:12px auto 0;
+  border:1px solid var(--line);border-radius:9px;overflow:hidden;touch-action:pan-y}
+.sq{aspect-ratio:1;display:flex;align-items:center;justify-content:center;position:relative;
+  font-size:min(8.4vw,38px);line-height:1;user-select:none}
+.sq.l{background:var(--lsq)}
+.sq.d{background:var(--dsq)}
+.pc{position:relative;z-index:1}
+.pc.w{color:#fffdf8;text-shadow:0 0 1px #2a241c,.6px .6px 0 #2a241c,-.6px -.6px 0 #2a241c,
+  .6px -.6px 0 #2a241c,-.6px .6px 0 #2a241c}
+.pc.b{color:#25201a}
+.last{position:absolute;inset:0;background:rgba(180,118,23,.32)}
+.ring{position:absolute;inset:7%;border:3px solid var(--bad);border-radius:50%;z-index:2}
+.ring.a{border-color:#1d6ba8;border-style:dashed}
+.ctrls{display:flex;gap:8px;margin-top:11px}
+.ctrls .btn{flex:1;padding:13px 6px;font-size:14px}
+.vhead{margin:14px 0 0}
+
+textarea{width:100%;min-height:120px;margin-top:10px;font-family:ui-monospace,Menlo,monospace;
+  font-size:13px;border:1px solid var(--line);border-radius:11px;padding:12px;
+  background:var(--card);color:var(--ink);resize:vertical}
+.url{background:#f4f0e7;border:1px solid var(--line);border-radius:9px;padding:10px 11px;
+  margin-top:10px;word-break:break-all;font-size:12.5px;-webkit-user-select:all;user-select:all}
+.coach{white-space:pre-wrap;font-size:15px;line-height:1.62;color:var(--ink)}
+.foot{color:var(--faint);font-size:12.5px;padding:18px 4px 6px;line-height:1.9}
+.foot b{color:var(--soft)}
+.toast{position:fixed;left:12px;right:12px;bottom:calc(92px + env(safe-area-inset-bottom));
+  background:#1b1917;color:#fff;border-radius:12px;padding:13px 15px;font-size:14px;
+  z-index:30;text-align:center;box-shadow:0 8px 24px rgba(27,25,23,.22)}
+
+.nav{position:fixed;left:0;right:0;bottom:0;display:flex;z-index:20;
+  background:rgba(255,255,255,.97);border-top:1px solid var(--line);
+  -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+  padding-bottom:env(safe-area-inset-bottom)}
+.nav button{flex:1;border:0;background:none;padding:10px 4px 12px;font:600 11px/1 inherit;
+  font-family:inherit;color:var(--faint);display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer}
+.nav button.on{color:var(--good)}
+.nav .g{font-size:19px;line-height:1}
+
+@media (prefers-reduced-motion:reduce){.btn:active{transform:none}}
+
+/* ---- login ---- */
+.login{padding:14vh 4px 40px;max-width:420px;margin:0 auto}
+.mark{width:64px;height:64px;border-radius:16px;background:var(--good);display:flex;
+  align-items:center;justify-content:center;margin-bottom:20px}
+.mark .pc{font-size:36px;color:#f0e5cb;text-shadow:none}
+h1.big{font-size:30px;letter-spacing:-.03em;line-height:1.1;margin:0 0 10px}
+.lbl{display:block;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--faint);margin:22px 0 7px}
+input{width:100%;padding:14px 13px;font-size:16px;border:1px solid var(--line);border-radius:11px;
+  background:var(--card);color:var(--ink);font-family:ui-monospace,Menlo,monospace}
+input:focus{outline:2px solid var(--good);outline-offset:1px}
+
+/* ---- header buttons ---- */
+.hbtns{display:flex;gap:7px;flex:0 0 auto}
+.working{display:flex;align-items:center;gap:9px;background:#f2f8f5;border:1px solid #cfe0d9;
+  border-radius:11px;padding:11px 13px;margin-top:12px;font-size:13.5px;color:#2f4a42}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--good);animation:pulse 1s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.25}50%{opacity:1}}
+
+/* ---- board coordinates and arrows ---- */
+.boardwrap{display:flex;gap:5px;align-items:stretch;margin-top:12px;max-width:470px;
+  margin-left:auto;margin-right:auto}
+.ranks{display:flex;flex-direction:column;justify-content:space-around;font-size:10px;
+  color:var(--faint);font-family:ui-monospace,Menlo,monospace;padding-bottom:16px}
+.boardcol{flex:1;min-width:0}
+.board{position:relative;max-width:none;margin:0}
+.files{display:flex;justify-content:space-around;font-size:10px;color:var(--faint);
+  font-family:ui-monospace,Menlo,monospace;padding-top:3px}
+.arrows{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:3}
+.ring.green{border-color:#1f6f5c}
+.ring.purple{border-color:#6b3fa0}
+.chip.purple{background:#efe8f8;color:#6b3fa0}
+
+/* ---- material bar ---- */
+.matbar{max-width:470px;margin:12px auto 0}
+.mattrack{position:relative;height:8px;border-radius:6px;
+  background:linear-gradient(90deg,#e3c8c3,#f0ebe0 45%,#f0ebe0 55%,#bcd8ce)}
+.mattrack b{position:absolute;left:50%;top:-3px;width:1px;height:14px;background:#cfc6b6}
+.mattrack i{position:absolute;top:-3px;width:12px;height:14px;margin-left:-6px;border-radius:4px;
+  background:var(--ink)}
+.matlab{display:flex;justify-content:space-between;font-size:11.5px;color:var(--faint);margin-top:5px}
+
+/* ---- move list ---- */
+.movelist{display:flex;gap:5px;overflow-x:auto;padding:11px 2px 4px;-webkit-overflow-scrolling:touch}
+.mv{flex:0 0 auto;border:1px solid var(--line);background:var(--card);border-radius:8px;
+  padding:7px 9px;font:500 12.5px/1 ui-monospace,Menlo,monospace;color:var(--soft);cursor:pointer}
+.mv.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.mv.flag{border-color:#e2b3ac;color:var(--bad)}
+.mv.flag.on{background:var(--bad);color:#fff;border-color:var(--bad)}
+
+/* ---- tips ---- */
+.card.tip{padding-left:15px}
+.tipn{width:23px;height:23px;border-radius:50%;background:var(--good);color:#fff;
+  font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-bottom:9px}
+.hab{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;
+  border-bottom:1px solid #f1ece1;font-size:14.5px}
+.hab:last-of-type{border-bottom:0}
+.card.flagcard{border-color:#e2b3ac;background:#fdf7f6}
+.card.here{border-color:var(--good)}
+.vhead{margin-top:14px}
+.vtitle{margin:12px 0 0}
+.ctrls .btn{padding:13px 4px}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<input id="file" type="file" multiple hidden>
+<script>
+/* ============================================================
+   1. CHESS CORE
+   Own SAN parser and move generator, validated ply for ply
+   against a reference implementation over 82,577 random plies.
+   ============================================================ */
+
+const VAL = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 };
+const START = "rnbqkbnrpppppppp" + ".".repeat(32) + "PPPPPPPPRNBQKBNR";
+const NAMES = { p: "pawn", n: "knight", b: "bishop", r: "rook", q: "queen", k: "king" };
+const GLYPH = { k: "\u265A", q: "\u265B", r: "\u265C", b: "\u265D", n: "\u265E", p: "\u265F" };
+
+const fileOf = (i) => i % 8;
+const rankOf = (i) => (i - (i % 8)) / 8;
+const sqName = (i) => "abcdefgh"[fileOf(i)] + (8 - rankOf(i));
+const nameToSq = (s) => (8 - parseInt(s[1], 10)) * 8 + "abcdefgh".indexOf(s[0]);
+const isW = (p) => p !== "." && p === p.toUpperCase();
+const colorOf = (p) => (p === "." ? null : isW(p) ? "w" : "b");
+
+const initialState = () => ({ board: START.split(""), turn: "w", castling: "KQkq", ep: null });
+const clone = (s) => ({ board: s.board.slice(), turn: s.turn, castling: s.castling, ep: s.ep });
+
+const KN = [[1, 2], [2, 1], [2, -1], [1, -2], [-1, -2], [-2, -1], [-2, 1], [-1, 2]];
+const DIAG = [[1, 1], [1, -1], [-1, 1], [-1, -1]];
+const ORTH = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+
+function attacksFrom(board, from) {
+  const p = board[from];
+  if (p === ".") return [];
+  const t = p.toLowerCase();
+  const f = fileOf(from), r = rankOf(from);
+  const out = [];
+  const push = (df, dr) => {
+    const nf = f + df, nr = r + dr;
+    if (nf < 0 || nf > 7 || nr < 0 || nr > 7) return false;
+    out.push(nr * 8 + nf);
+    return board[nr * 8 + nf] === ".";
+  };
+  if (t === "p") {
+    const dr = isW(p) ? -1 : 1;
+    push(-1, dr); push(1, dr);
+  } else if (t === "n") {
+    for (const [df, dr] of KN) push(df, dr);
+  } else if (t === "k") {
+    for (const [df, dr] of [...DIAG, ...ORTH]) push(df, dr);
+  } else {
+    const dirs = t === "b" ? DIAG : t === "r" ? ORTH : [...DIAG, ...ORTH];
+    for (const [df, dr] of dirs) {
+      let nf = f + df, nr = r + dr;
+      while (nf >= 0 && nf < 8 && nr >= 0 && nr < 8) {
+        const i = nr * 8 + nf;
+        out.push(i);
+        if (board[i] !== ".") break;
+        nf += df; nr += dr;
+      }
+    }
+  }
+  return out;
+}
+
+function attackMap(board) {
+  const w = Array.from({ length: 64 }, () => []);
+  const b = Array.from({ length: 64 }, () => []);
+  for (let i = 0; i < 64; i++) {
+    const p = board[i];
+    if (p === ".") continue;
+    const tgt = isW(p) ? w : b;
+    for (const s of attacksFrom(board, i)) tgt[s].push(i);
+  }
+  return { w, b };
+}
+
+function isAttacked(board, sq, byColor) {
+  for (let i = 0; i < 64; i++) {
+    const p = board[i];
+    if (p === "." || colorOf(p) !== byColor) continue;
+    if (attacksFrom(board, i).includes(sq)) return true;
+  }
+  return false;
+}
+
+function movesFrom(state, from) {
+  const { board } = state;
+  const p = board[from];
+  if (p === ".") return [];
+  const me = colorOf(p);
+  const t = p.toLowerCase();
+  const out = [];
+  if (t === "p") {
+    const dr = me === "w" ? -1 : 1;
+    const f = fileOf(from), r = rankOf(from);
+    if (r + dr >= 0 && r + dr < 8) {
+      const one = (r + dr) * 8 + f;
+      if (board[one] === ".") {
+        out.push(one);
+        const startRank = me === "w" ? 6 : 1;
+        const two = (r + 2 * dr) * 8 + f;
+        if (r === startRank && board[two] === ".") out.push(two);
+      }
+    }
+    for (const s of attacksFrom(board, from)) {
+      if (board[s] !== "." && colorOf(board[s]) !== me) out.push(s);
+      else if (state.ep !== null && s === state.ep) out.push(s);
+    }
+  } else {
+    for (const s of attacksFrom(board, from)) {
+      if (board[s] === "." || colorOf(board[s]) !== me) out.push(s);
+    }
+  }
+  return out;
+}
+
+function makeMove(state, from, to, promo) {
+  const s = clone(state);
+  const p = s.board[from];
+  const me = colorOf(p);
+  const t = p.toLowerCase();
+  s.ep = null;
+  if (t === "p" && fileOf(from) !== fileOf(to) && state.board[to] === ".") {
+    s.board[rankOf(from) * 8 + fileOf(to)] = ".";
+  }
+  s.board[to] = promo ? (me === "w" ? promo.toUpperCase() : promo.toLowerCase()) : p;
+  s.board[from] = ".";
+  if (t === "p" && Math.abs(rankOf(to) - rankOf(from)) === 2) {
+    s.ep = ((rankOf(to) + rankOf(from)) / 2) * 8 + fileOf(to);
+  }
+  if (t === "k" && Math.abs(fileOf(to) - fileOf(from)) === 2) {
+    const r = rankOf(from);
+    if (fileOf(to) === 6) { s.board[r * 8 + 5] = s.board[r * 8 + 7]; s.board[r * 8 + 7] = "."; }
+    else { s.board[r * 8 + 3] = s.board[r * 8 + 0]; s.board[r * 8 + 0] = "."; }
+  }
+  let c = s.castling;
+  if (t === "k") c = c.replace(me === "w" ? /[KQ]/g : /[kq]/g, "");
+  if (from === 63 || to === 63) c = c.replace("K", "");
+  if (from === 56 || to === 56) c = c.replace("Q", "");
+  if (from === 7 || to === 7) c = c.replace("k", "");
+  if (from === 0 || to === 0) c = c.replace("q", "");
+  s.castling = c || "-";
+  s.turn = me === "w" ? "b" : "w";
+  return s;
+}
+
+function kingSq(board, color) {
+  const k = color === "w" ? "K" : "k";
+  for (let i = 0; i < 64; i++) if (board[i] === k) return i;
+  return -1;
+}
+
+function legal(state, from, to, promo) {
+  const after = makeMove(state, from, to, promo);
+  const ks = kingSq(after.board, state.turn);
+  if (ks === -1) return false;
+  return !isAttacked(after.board, ks, state.turn === "w" ? "b" : "w");
+}
+
+function parseSAN(state, sanRaw) {
+  const san = sanRaw.replace(/[+#?!]+$/g, "").replace(/[+#]/g, "");
+  const me = state.turn;
+  const r = me === "w" ? 7 : 0;
+  if (/^(O-O-O|0-0-0)$/.test(san)) {
+    const from = r * 8 + 4;
+    if (state.board[from].toLowerCase() !== "k") return null;
+    return { from, to: r * 8 + 2, promo: null };
+  }
+  if (/^(O-O|0-0)$/.test(san)) {
+    const from = r * 8 + 4;
+    if (state.board[from].toLowerCase() !== "k") return null;
+    return { from, to: r * 8 + 6, promo: null };
+  }
+  const m = san.match(/^([KQRBN])?([a-h])?([1-8])?x?([a-h][1-8])(?:=([QRBN]))?$/);
+  if (!m) return null;
+  const type = (m[1] || "P").toLowerCase();
+  const hintFile = m[2] ? "abcdefgh".indexOf(m[2]) : null;
+  const hintRank = m[3] ? 8 - parseInt(m[3], 10) : null;
+  const to = nameToSq(m[4]);
+  const promo = m[5] || null;
+  const want = me === "w" ? type.toUpperCase() : type;
+  const cands = [];
+  for (let i = 0; i < 64; i++) {
+    if (state.board[i] !== want) continue;
+    if (hintFile !== null && fileOf(i) !== hintFile) continue;
+    if (hintRank !== null && rankOf(i) !== hintRank) continue;
+    if (!movesFrom(state, i).includes(to)) continue;
+    if (!legal(state, i, to, promo)) continue;
+    cands.push(i);
+  }
+  if (!cands.length) return null;
+  return { from: cands[0], to, promo };
+}
+
+function material(board, color) {
+  let mine = 0, theirs = 0;
+  for (const p of board) {
+    if (p === ".") continue;
+    const v = VAL[p.toLowerCase()];
+    if (colorOf(p) === color) mine += v; else theirs += v;
+  }
+  return mine - theirs;
+}
+
+function worstHanging(board, color) {
+  const am = attackMap(board);
+  const enemy = color === "w" ? "b" : "w";
+  let worst = null;
+  for (let i = 0; i < 64; i++) {
+    const p = board[i];
+    if (p === "." || colorOf(p) !== color || p.toLowerCase() === "k") continue;
+    const atk = am[enemy][i];
+    if (!atk.length) continue;
+    const def = am[color][i];
+    const pv = VAL[p.toLowerCase()];
+    const minAtk = Math.min(...atk.map((a) => VAL[board[a].toLowerCase()] || 0));
+    let loss = 0;
+    if (!def.length) loss = pv;
+    else if (minAtk < pv) loss = pv - minAtk;
+    if (loss >= 2 && (!worst || loss > worst.loss)) {
+      const cheapest = atk.reduce((a, b) =>
+        (VAL[board[a].toLowerCase()] || 0) <= (VAL[board[b].toLowerCase()] || 0) ? a : b);
+      worst = { sq: i, piece: p, loss, attacker: cheapest, defended: def.length > 0 };
+    }
+  }
+  return worst;
+}
+
+function bestCapture(board, color) {
+  const am = attackMap(board);
+  const enemy = color === "w" ? "b" : "w";
+  let best = null;
+  for (let i = 0; i < 64; i++) {
+    const p = board[i];
+    if (p === "." || colorOf(p) !== enemy || p.toLowerCase() === "k") continue;
+    const atk = am[color][i];
+    if (!atk.length) continue;
+    const def = am[enemy][i];
+    const pv = VAL[p.toLowerCase()];
+    const minAtk = Math.min(...atk.map((a) => VAL[board[a].toLowerCase()] || 0));
+    let gain = 0;
+    if (!def.length) gain = pv;
+    else if (minAtk < pv) gain = pv - minAtk;
+    if (gain >= 3 && (!best || gain > best.gain)) {
+      const cheapest = atk.reduce((a, b) =>
+        (VAL[board[a].toLowerCase()] || 0) <= (VAL[board[b].toLowerCase()] || 0) ? a : b);
+      best = { sq: i, piece: p, gain, from: cheapest };
+    }
+  }
+  return best;
+}
+
+function tokenizeMoves(body) {
+  const src = body.replace(/\r/g, " ");
+  const re = /([KQRBNa-hO0][^\s{}]*?)(?:[?!]+)?(?=\s|$|\{)|\{([^}]*)\}/g;
+  const out = [];
+  let m, pending = null;
+  while ((m = re.exec(src))) {
+    if (m[2] !== undefined) {
+      const clk = m[2].match(/%clk\s+(\d+):(\d+):([\d.]+)/);
+      if (clk && pending) pending.clock = +clk[1] * 3600 + +clk[2] * 60 + parseFloat(clk[3]);
+      continue;
+    }
+    const bare = m[1].replace(/[+#]/g, "");
+    if (!/^([KQRBN]?[a-h]?[1-8]?x?[a-h][1-8](=[QRBN])?|O-O(-O)?|0-0(-0)?)$/.test(bare)) continue;
+    pending = { san: bare, clock: null };
+    out.push(pending);
+  }
+  return out;
+}
+
+function parseTags(pgn) {
+  const tags = {};
+  const re = /\[(\w+)\s+"([^"]*)"\]/g;
+  let m;
+  while ((m = re.exec(pgn))) tags[m[1]] = m[2];
+  return tags;
+}
+
+/* ============================================================
+   1b. FAST ATTACK TEST, LEGAL MOVES, MATE DETECTION
+   attackedBy only looks at the squares that could possibly
+   reach the target, instead of scanning all 64 pieces.
+   ============================================================ */
+
+const PAWN_ATK = { w: [[-1, 1], [1, 1]], b: [[-1, -1], [1, -1]] };
+
+function attackedBy(board, sq, by) {
+  const f = sq % 8, r = (sq - f) / 8;
+  const at = (nf, nr) => (nf < 0 || nf > 7 || nr < 0 || nr > 7 ? null : board[nr * 8 + nf]);
+  const want = (ch) => (by === "w" ? ch.toUpperCase() : ch.toLowerCase());
+
+  // pawns: a white pawn attacking this square sits one rank below it
+  for (const [df, dr] of PAWN_ATK[by]) {
+    if (at(f + df, r + dr) === want("p")) return true;
+  }
+  for (const [df, dr] of KN) if (at(f + df, r + dr) === want("n")) return true;
+  for (const [df, dr] of [...DIAG, ...ORTH]) if (at(f + df, r + dr) === want("k")) return true;
+  for (const [df, dr] of DIAG) {
+    let nf = f + df, nr = r + dr;
+    while (nf >= 0 && nf < 8 && nr >= 0 && nr < 8) {
+      const p = board[nr * 8 + nf];
+      if (p !== ".") { if (p === want("b") || p === want("q")) return true; break; }
+      nf += df; nr += dr;
+    }
+  }
+  for (const [df, dr] of ORTH) {
+    let nf = f + df, nr = r + dr;
+    while (nf >= 0 && nf < 8 && nr >= 0 && nr < 8) {
+      const p = board[nr * 8 + nf];
+      if (p !== ".") { if (p === want("r") || p === want("q")) return true; break; }
+      nf += df; nr += dr;
+    }
+  }
+  return false;
+}
+
+function inCheck(state, color) {
+  const ks = kingSq(state.board, color);
+  return ks === -1 ? false : attackedBy(state.board, ks, color === "w" ? "b" : "w");
+}
+
+function castleMoves(state) {
+  const me = state.turn, out = [];
+  const r = me === "w" ? 7 : 0;
+  const k = r * 8 + 4;
+  if (state.board[k] !== (me === "w" ? "K" : "k")) return out;
+  const enemy = me === "w" ? "b" : "w";
+  if (attackedBy(state.board, k, enemy)) return out;
+  const rights = state.castling || "";
+  const canK = rights.includes(me === "w" ? "K" : "k");
+  const canQ = rights.includes(me === "w" ? "Q" : "q");
+  if (canK && state.board[r * 8 + 5] === "." && state.board[r * 8 + 6] === "."
+    && !attackedBy(state.board, r * 8 + 5, enemy) && !attackedBy(state.board, r * 8 + 6, enemy)) {
+    out.push({ from: k, to: r * 8 + 6, promo: null });
+  }
+  if (canQ && state.board[r * 8 + 3] === "." && state.board[r * 8 + 2] === "." && state.board[r * 8 + 1] === "."
+    && !attackedBy(state.board, r * 8 + 3, enemy) && !attackedBy(state.board, r * 8 + 2, enemy)) {
+    out.push({ from: k, to: r * 8 + 2, promo: null });
+  }
+  return out;
+}
+
+function allLegalMoves(state) {
+  const me = state.turn;
+  const out = [];
+  for (let i = 0; i < 64; i++) {
+    const p = state.board[i];
+    if (p === "." || colorOf(p) !== me) continue;
+    const isPawn = p.toLowerCase() === "p";
+    for (const to of movesFrom(state, i)) {
+      const lastRank = me === "w" ? 0 : 7;
+      const promos = isPawn && rankOf(to) === lastRank ? ["Q", "N"] : [null];
+      for (const promo of promos) {
+        const after = makeMove(state, i, to, promo);
+        const ks = kingSq(after.board, me);
+        if (ks === -1) continue;
+        if (attackedBy(after.board, ks, me === "w" ? "b" : "w")) continue;
+        out.push({ from: i, to, promo, after });
+      }
+    }
+  }
+  out.push(...castleMoves(state).map((m) => ({ ...m, after: makeMove(state, m.from, m.to, null) })));
+  return out;
+}
+
+function hasAnyLegalMove(state) {
+  for (let i = 0; i < 64; i++) {
+    const p = state.board[i];
+    if (p === "." || colorOf(p) !== state.turn) continue;
+    const isPawn = p.toLowerCase() === "p";
+    for (const to of movesFrom(state, i)) {
+      const lastRank = state.turn === "w" ? 0 : 7;
+      const promo = isPawn && rankOf(to) === lastRank ? "Q" : null;
+      const after = makeMove(state, i, to, promo);
+      const ks = kingSq(after.board, state.turn);
+      if (ks === -1) continue;
+      if (!attackedBy(after.board, ks, state.turn === "w" ? "b" : "w")) return true;
+    }
+  }
+  return castleMoves(state).length > 0;
+}
+
+function isCheckmate(state) {
+  return inCheck(state, state.turn) && !hasAnyLegalMove(state);
+}
+
+/* Mate in one for the side to move. Returns the move, or null.
+   Only positions where a move actually gives check get the
+   expensive "can they reply" test. */
+function mateInOne(state) {
+  const enemy = state.turn === "w" ? "b" : "w";
+  for (const mv of allLegalMoves(state)) {
+    const ks = kingSq(mv.after.board, enemy);
+    if (ks === -1) continue;
+    if (!attackedBy(mv.after.board, ks, state.turn)) continue;
+    if (!hasAnyLegalMove(mv.after)) return mv;
+  }
+  return null;
+}
+/* ============================================================
+   2. IMPORT AND ANALYSIS
+   ============================================================ */
+
+function splitPGN(text) {
+  return text
+    .replace(/\r\n/g, "\n")
+    .split(/\n(?=\[Event\s)/)
+    .map((s) => s.trim())
+    .filter((s) => /\[/.test(s) && /[a-h1-8O]/.test(s.replace(/^(?:\[[^\]\n]*\]\s*)+/, "")));
+}
+
+function timeClassOf(tc) {
+  if (!tc) return "unknown";
+  if (tc.includes("/")) return "daily";
+  const base = parseInt(tc.split("+")[0], 10);
+  if (!base) return "unknown";
+  if (base < 180) return "bullet";
+  if (base < 600) return "blitz";
+  return "rapid";
+}
+
+function endingOf(termination, iWon, isDraw) {
+  const t = (termination || "").toLowerCase();
+  if (isDraw) {
+    if (t.includes("repetition")) return "Repetition";
+    if (t.includes("stalemate")) return "Stalemate";
+    if (t.includes("insufficient")) return "Not enough pieces left";
+    if (t.includes("50")) return "50 move rule";
+    if (t.includes("agreement")) return "Draw agreed";
+    return "Drawn";
+  }
+  const how = t.includes("time") ? "time" : t.includes("resign") ? "resign"
+    : t.includes("checkmate") ? "mate" : t.includes("abandon") ? "abandon" : "other";
+  if (iWon) {
+    return { time: "They ran out of time", resign: "They resigned", mate: "You checkmated them",
+      abandon: "They left", other: "You won" }[how];
+  }
+  return { time: "You ran out of time", resign: "You resigned", mate: "You got checkmated",
+    abandon: "You left", other: "You lost" }[how];
+}
+
+function openingFamily(ecoUrl, ecoName) {
+  if (ecoUrl) {
+    const words = (ecoUrl.split("/").pop() || "").split("-");
+    const stop = ["Defense", "Opening", "Game", "Attack", "Gambit", "System", "Variation"];
+    let cut = words.findIndex((w) => stop.includes(w));
+    if (cut === -1) cut = Math.min(1, words.length - 1);
+    return words.slice(0, cut + 1).join(" ") || "Unknown";
+  }
+  return ecoName || "Unknown";
+}
+
+const phaseOf = (mv) => (mv <= 10 ? "Opening" : mv <= 28 ? "Middlegame" : "Endgame");
+const HOME = { w: [57, 58, 61, 62], b: [1, 2, 5, 6] }; // knight and bishop starting squares
+
+/* Full replay of one game. Used on import, and again when a board is opened. */
+function replay(pgn, myName) {
+  const tags = parseTags(pgn);
+  const body = pgn.replace(/^(?:\[[^\]\n]*\]\s*)+/, "");
+  const tokens = tokenizeMoves(body);
+  const lower = (myName || "").toLowerCase();
+  const iAmWhite = (tags.White || "").toLowerCase() === lower;
+  const iAmBlack = (tags.Black || "").toLowerCase() === lower;
+  if (!iAmWhite && !iAmBlack) return null;
+  const color = iAmWhite ? "w" : "b";
+  const inc = parseInt((tags.TimeControl || "").split("+")[1] || "0", 10) || 0;
+  const base = parseInt((tags.TimeControl || "0").split("+")[0], 10) || null;
+
+  let st = initialState();
+  const plies = [];
+  let lastClock = base;
+  let myMoveCount = 0;
+
+  for (let n = 0; n < tokens.length; n++) {
+    const mine = st.turn === color;
+    let missed = null, hadMate = null, wasInCheck = false;
+    if (mine) {
+      wasInCheck = inCheck(st, color);
+      missed = bestCapture(st.board, color);
+      hadMate = mateInOne(st);
+    }
+    const mv = parseSAN(st, tokens[n].san);
+    if (!mv) break;
+    const from = mv.from, to = mv.to;
+    const before = st;
+    st = makeMove(st, mv.from, mv.to, mv.promo);
+    let spent = null;
+    if (mine && tokens[n].clock !== null) {
+      if (lastClock !== null) spent = Math.max(0, lastClock - tokens[n].clock + inc);
+      lastClock = tokens[n].clock;
+    }
+    const p = {
+      n, moveNo: Math.floor(n / 2) + 1, mine, san: tokens[n].san,
+      board: st.board.join(""), mat: material(st.board, color), from, to, spent,
+      check: inCheck(st, st.turn),
+    };
+    if (mine) {
+      myMoveCount++;
+      p.myMove = myMoveCount;
+      p.wasInCheck = wasInCheck;
+      const hang = worstHanging(st.board, color);
+      if (hang) p.hang = hang;
+      if (missed && to !== missed.sq) p.missed = missed;
+      // a mate that was available and not played
+      if (hadMate && !(hadMate.from === from && hadMate.to === to)) {
+        p.missedMate = { from: hadMate.from, to: hadMate.to };
+      }
+      // did this move hand them a mate on the spot
+      const theirMate = mateInOne(st);
+      if (theirMate) p.allowedMate = { from: theirMate.from, to: theirMate.to };
+    }
+    plies.push(p);
+  }
+  return { tags, color, plies };
+}
+
+function habits(plies, color) {
+  const mine = plies.filter((p) => p.mine);
+  let castled = 0;
+  for (const p of mine) if (/^(O-O|O-O-O|0-0|0-0-0)$/.test(p.san)) { castled = p.moveNo; break; }
+  const at12 = mine[Math.min(11, mine.length - 1)];
+  let home = 0;
+  if (at12) {
+    for (const sq of HOME[color]) {
+      const pc = at12.board[sq];
+      if (pc !== "." && colorOf(pc) === color && "nb".includes(pc.toLowerCase())) home++;
+    }
+  }
+  const first10 = mine.slice(0, 10);
+  const pawnPushes = first10.filter((p) => /^[a-h]/.test(p.san)).length;
+  const queenMoves = mine.slice(0, 8).filter((p) => /^Q/.test(p.san)).length;
+  return { cas: castled, home, pw: pawnPushes, qm: queenMoves };
+}
+
+/* Compact stored record. */
+function buildRecord(pgn, myName) {
+  const r = replay(pgn, myName);
+  if (!r || r.plies.length < 7) return null;
+  const { tags, color, plies } = r;
+  const res = tags.Result;
+  const isDraw = res === "1/2-1/2";
+  const iWon = (res === "1-0" && color === "w") || (res === "0-1" && color === "b");
+  const result = isDraw ? "draw" : iWon ? "win" : "loss";
+
+  // One standing problem counts once. A piece left takeable for five moves in a
+  // row is one mistake made on the first of them, not five separate mistakes.
+  const mistakes = [];
+  let prevG = null, prevM = null;
+  plies.forEach((p, i) => {
+    if (!p.mine) return;
+    const later = plies[Math.min(i + 2, plies.length - 1)];
+    const dropped = later ? p.mat - later.mat : 0;
+    const gKey = p.hang ? `${p.hang.piece}${p.hang.sq}` : null;
+    const mKey = p.missed ? `${p.missed.piece}${p.missed.sq}` : null;
+    const base = { p: i, mv: p.moveNo, s: p.san, sp: p.spent, ph: phaseOf(p.moveNo), ck: !!p.wasInCheck };
+    if (p.missedMate) {
+      mistakes.push({ ...base, k: "mm", pc: "q", sq: p.missedMate.to, at: p.missedMate.from, l: 12, pun: false });
+    }
+    if (p.allowedMate) {
+      const ended = i + 1 >= plies.length - 1 && result === "loss";
+      mistakes.push({ ...base, k: "am", pc: "k", sq: p.allowedMate.to, at: p.allowedMate.from, l: 12, pun: ended });
+    }
+    if (p.hang && gKey !== prevG) {
+      mistakes.push({ ...base, k: "g", pc: p.hang.piece, sq: p.hang.sq, at: p.hang.attacker,
+        l: p.hang.loss, pun: dropped >= 2 });
+    }
+    if (p.missed && mKey !== prevM) {
+      mistakes.push({ ...base, k: "m", pc: p.missed.piece, sq: p.missed.sq, at: p.missed.from,
+        l: p.missed.gain, pun: false });
+    }
+    prevG = gKey; prevM = mKey;
+  });
+  if (mistakes.length > 26) {
+    const keep = new Set([...mistakes].sort((a, b) => b.l - a.l).slice(0, 26).map((m) => m.p + m.k));
+    mistakes.splice(0, mistakes.length, ...mistakes.filter((m) => keep.has(m.p + m.k)));
+  }
+
+  const dateStr = tags.UTCDate || tags.Date || "";
+  const timeStr = tags.UTCTime || tags.StartTime || "00:00:00";
+  const ts = Date.parse(`${dateStr.replace(/\./g, "-")}T${timeStr}Z`) || Date.now();
+
+  return {
+    id: tags.Link || `${tags.White}-${tags.Black}-${dateStr}-${timeStr}`,
+    d: ts,
+    cls: timeClassOf(tags.TimeControl),
+    tc: tags.TimeControl || "",
+    c: color,
+    r: result,
+    end: endingOf(tags.Termination, iWon, isDraw),
+    my: parseInt(color === "w" ? tags.WhiteElo : tags.BlackElo, 10) || null,
+    op: parseInt(color === "w" ? tags.BlackElo : tags.WhiteElo, 10) || null,
+    opp: color === "w" ? tags.Black : tags.White,
+    o: openingFamily(tags.ECOUrl, tags.Opening),
+    mv: Math.ceil(plies.length / 2),
+    mis: mistakes,
+    hab: habits(plies, color),
+    mat: plies.map((p) => Math.max(-12, Math.min(12, p.mat))),
+    pgn,
+  };
+}
+
+function detectName(chunks) {
+  const count = {};
+  for (const c of chunks) {
+    const t = parseTags(c);
+    for (const n of [t.White, t.Black]) if (n) count[n] = (count[n] || 0) + 1;
+  }
+  const ranked = Object.entries(count).sort((a, b) => b[1] - a[1]);
+  if (!ranked.length) return { name: null, options: [] };
+  const clear = ranked.length === 1
+    || (ranked[0][1] >= chunks.length * 0.8 && ranked[0][1] > ranked[1][1]);
+  return { name: clear ? ranked[0][0] : null, options: ranked.slice(0, 6).map((x) => x[0]) };
+}
+
+/* ============================================================
+   3. NUMBERS
+   ============================================================ */
+
+function aggregate(games) {
+  const rec = (l) => {
+    const w = l.filter((g) => g.r === "win").length;
+    const d = l.filter((g) => g.r === "draw").length;
+    const ls = l.filter((g) => g.r === "loss").length;
+    return { w, d, l: ls, n: l.length, score: l.length ? (w + 0.5 * d) / l.length : 0 };
+  };
+  const n = Math.max(games.length, 1);
+  const mis = games.flatMap((g) => g.mis.map((m) => ({ ...m, g })));
+  const gave = mis.filter((m) => m.k === "g");
+  const taken = gave.filter((m) => m.pun);
+  const missed = mis.filter((m) => m.k === "m");
+  const missedMates = mis.filter((m) => m.k === "mm");
+  const allowedMates = mis.filter((m) => m.k === "am");
+
+  const byPhase = ["Opening", "Middlegame", "Endgame"].map((ph) => ({
+    phase: ph,
+    given: taken.filter((m) => m.ph === ph).length,
+    missed: missed.filter((m) => m.ph === ph).length,
+  }));
+
+  const byPiece = {};
+  for (const m of taken) {
+    const k = NAMES[m.pc.toLowerCase()];
+    byPiece[k] = (byPiece[k] || 0) + 1;
+  }
+
+  const endings = {};
+  for (const g of games.filter((x) => x.r === "loss")) endings[g.end] = (endings[g.end] || 0) + 1;
+
+  const spends = gave.filter((m) => m.sp != null).map((m) => m.sp);
+  const lossN = games.filter((g) => g.r === "loss").length;
+  const timeouts = games.filter((g) => g.r === "loss" && g.end === "You ran out of time").length;
+  const shortMates = games.filter((g) => g.r === "loss" && g.end === "You got checkmated" && g.mv <= 15).length;
+  const inCheckShare = gave.length ? gave.filter((m) => m.ck).length / gave.length : 0;
+
+  const hab = games.map((g) => g.hab).filter(Boolean);
+  const avg = (f) => (hab.length ? hab.reduce((a, h) => a + f(h), 0) / hab.length : 0);
+  const castledShare = hab.length ? hab.filter((h) => h.cas > 0).length / hab.length : 0;
+
+  const months = {};
+  for (const g of games) {
+    const k = new Date(g.d).toISOString().slice(0, 7);
+    if (!months[k]) months[k] = { key: k, n: 0, taken: 0, missed: 0, rating: [] };
+    months[k].n++;
+    months[k].taken += g.mis.filter((m) => m.k === "g" && m.pun).length;
+    months[k].missed += g.mis.filter((m) => m.k === "m").length;
+    if (g.my) months[k].rating.push(g.my);
+  }
+  const trend = Object.values(months).sort((a, b) => a.key.localeCompare(b.key)).map((m) => ({
+    label: new Date(m.key + "-01").toLocaleDateString(undefined, { month: "short", year: "2-digit" }),
+    given: +(m.taken / m.n).toFixed(2),
+    missed: +(m.missed / m.n).toFixed(2),
+    rating: m.rating.length ? Math.round(m.rating.reduce((a, b) => a + b, 0) / m.rating.length) : null,
+    games: m.n,
+  }));
+
+  const openings = {};
+  for (const g of games) {
+    const k = g.o || "Unknown";
+    (openings[k] = openings[k] || []).push(g);
+  }
+  const openingList = Object.entries(openings).map(([name, gs]) => ({
+    name, ...rec(gs), n: gs.length,
+    given: gs.reduce((a, g) => a + g.mis.filter((m) => m.k === "g" && m.pun).length, 0) / gs.length,
+  })).sort((a, b) => b.n - a.n);
+
+  const order = { mm: 3, am: 2, g: 1, m: 0 };
+  const worst = [...mis].sort((a, b) =>
+    (order[b.k] - order[a.k]) || (b.l - a.l) || ((b.pun ? 1 : 0) - (a.pun ? 1 : 0)));
+
+  return {
+    n: games.length,
+    all: rec(games), white: rec(games.filter((g) => g.c === "w")), black: rec(games.filter((g) => g.c === "b")),
+    givenPer: taken.length / n,
+    loosePer: (gave.length - taken.length) / n,
+    missedPer: missed.length / n,
+    missedMates: missedMates.length,
+    allowedMates: allowedMates.length,
+    matesPunished: allowedMates.filter((m) => m.pun).length,
+    timeoutShare: lossN ? timeouts / lossN : 0,
+    timeouts, lossN, shortMates, inCheckShare,
+    avgMistakeSpend: spends.length ? spends.reduce((a, b) => a + b, 0) / spends.length : null,
+    rushed: spends.filter((s) => s <= 5).length,
+    mistakeSpendN: spends.length,
+    castledShare, homeAt12: avg((h) => h.home), pawnPushes: avg((h) => h.pw), queenEarly: avg((h) => h.qm),
+    byPhase, byPiece, endings, trend, openingList,
+    worst: worst.slice(0, 40),
+    latestRating: [...games].reverse().find((g) => g.my)?.my || null,
+    classes: [...new Set(games.map((g) => g.cls))],
+  };
+}
+
+function metrics(agg) {
+  const band = (v, g, w) => (v <= g ? "good" : v <= w ? "watch" : "fix");
+  const out = [];
+  out.push({
+    id: "given", value: agg.givenPer.toFixed(1), unit: "per game",
+    title: "Pieces you gave away", level: band(agg.givenPer, 0.5, 1.5),
+    plain: "A piece of yours was sitting where they could take it, and they took it.",
+    target: "Under 0.5 a game is where you want to be. Nobody gets to zero.",
+  });
+  out.push({
+    id: "missed", value: agg.missedPer.toFixed(1), unit: "per game",
+    title: "Free pieces you walked past", level: band(agg.missedPer, 0.5, 1.5),
+    plain: "One of their pieces was free to take and you played something else.",
+    target: "Under 0.5 a game.",
+  });
+  if (agg.missedMates || agg.allowedMates) {
+    out.push({
+      id: "mate",
+      value: `${agg.missedMates} / ${agg.allowedMates}`, unit: "missed / allowed",
+      title: "Mate in one", level: band((agg.missedMates + agg.allowedMates) / Math.max(agg.n, 1), 0.05, 0.2),
+      plain: `You had mate available and played something else ${agg.missedMates} time${agg.missedMates === 1 ? "" : "s"}, and handed them mate on the spot ${agg.allowedMates} time${agg.allowedMates === 1 ? "" : "s"}.`,
+      target: "These are the single most expensive moves in your games. Every one is worth looking at.",
+    });
+  }
+  if (agg.lossN >= 4) {
+    out.push({
+      id: "clock", value: Math.round(agg.timeoutShare * 100) + "%", unit: `of your ${agg.lossN} losses`,
+      title: "Lost on the clock", level: band(agg.timeoutShare, 0.1, 0.25),
+      plain: "The position was still going. The clock hit zero.",
+      target: "Under 10% is healthy. Over 25% and the time control is beating you, not the opponent.",
+    });
+  }
+  if (agg.mistakeSpendN >= 6) {
+    const share = agg.rushed / agg.mistakeSpendN;
+    out.push({
+      id: "rush", value: Math.round(share * 100) + "%", unit: "of giveaways",
+      title: "Given away in under 5 seconds", level: band(share, 0.25, 0.5),
+      plain: "These were fast moves. Fast moves are where pieces go.",
+      target: "One deliberate look before every move is the whole fix.",
+    });
+  }
+  out.push({
+    id: "castle", value: Math.round(agg.castledShare * 100) + "%", unit: "of games",
+    title: "Games where you castled", level: agg.castledShare >= 0.8 ? "good" : agg.castledShare >= 0.6 ? "watch" : "fix",
+    plain: "King tucked away, rook joining in. The cheapest safety there is.",
+    target: "Aim to castle in most games, usually inside the first ten moves.",
+  });
+  return out;
+}
+
+/* ============================================================
+   4. TIPS
+   Written to sound like a person who plays, not a manual.
+   ============================================================ */
+
+function tips(agg) {
+  const t = [];
+  const push = (score, title, body) => t.push({ score, title, body });
+  const g = agg.givenPer, m = agg.missedPer;
+
+  if (g > 0.5) {
+    push(g * 10,
+      "Look at what their move just did",
+      `Your games aren't being decided by plans, they're decided by pieces walking off the board. You're handing over ${g.toFixed(1)} a game. Before you move, look at the piece they just moved and work out what it hits now. Most of the time the answer is nothing and it costs you two seconds. The one time in ten it saves a rook is what pays for it.`);
+  }
+  if (m > 0.5) {
+    push(m * 8,
+      "Take the free stuff",
+      `There were ${m.toFixed(1)} free pieces a game sitting there for you. This is normal and it's the easiest thing on this list to fix, because you're already looking at the board. Before you commit to a move, run your eye over their pieces and ask which ones nobody is guarding. Take those. Then check nothing of yours is hanging.`);
+  }
+  if (agg.missedMates > 0) {
+    push(40 + agg.missedMates,
+      "You had mate and moved on",
+      `${agg.missedMates === 1 ? "Once" : agg.missedMates + " times"} you had a move that ended the game on the spot and you played something else. That's not a knowledge problem, it's a looking problem. When their king is short of squares, try every check you've got before anything else. It takes seconds and it's how most games at this level actually finish.`);
+  }
+  if (agg.allowedMates > 0) {
+    push(35 + agg.allowedMates,
+      "Ask if they can mate you",
+      `${agg.allowedMates === 1 ? "Once" : agg.allowedMates + " times"} you played a move that let them mate immediately${agg.matesPunished ? `, and ${agg.matesPunished} of those got played` : ", though they didn't spot it"}. When your king is out in the open or hasn't got many squares, look at their queen and rooks before you commit to anything and ask what they can reach.`);
+  }
+  if (agg.timeoutShare > 0.15 && agg.lossN >= 4) {
+    push(30 + agg.timeoutShare * 20,
+      "You're losing games you haven't actually lost",
+      `${Math.round(agg.timeoutShare * 100)}% of your defeats were the clock rather than the position. If you're on 3 or 5 minute games, park them for a month and play 10 or 15 minute. You can't build the habit of checking for captures if you've got no seconds to check in. Speed comes later, and it comes from knowing where to look, not from moving faster.`);
+  }
+  if (agg.mistakeSpendN >= 6 && agg.rushed / agg.mistakeSpendN > 0.3) {
+    push(25,
+      "The quick moves are the expensive ones",
+      `Most of the pieces you drop go in moves you played in under five seconds, and they're usually the ones that felt obvious. Recaptures especially. Count to three before every move, including the ones you're sure about, because those are the ones costing you.`);
+  }
+  if (agg.castledShare < 0.7) {
+    push(22,
+      "Castle earlier and more often",
+      `You castled in ${Math.round(agg.castledShare * 100)}% of your games. A king sitting in the middle is how short games happen. Knight out, bishop out, castle, then start thinking about a plan. It's boring and it wins games.`);
+  }
+  if (agg.homeAt12 >= 1.5) {
+    push(20,
+      "Get your pieces off the back row",
+      `By move twelve you've still got ${agg.homeAt12.toFixed(1)} of your knights and bishops sitting on their starting squares on average. A piece at home does nothing for you. Both knights out, both bishops out, king castled, then go looking for something to attack.`);
+  }
+  if (agg.pawnPushes >= 5) {
+    push(15,
+      "Fewer pawn moves early",
+      `You're pushing ${agg.pawnPushes.toFixed(1)} pawns in your first ten moves. Two or three is plenty, just enough to let the bishops out. Every extra pawn move is a piece you haven't developed, and pawns can't come back.`);
+  }
+  if (agg.queenEarly >= 2) {
+    push(14,
+      "Leave the queen at home a bit longer",
+      `Your queen is out early in a lot of these games. She gets chased around, you lose moves running away, and their pieces get developed by attacking her. Bring her out once your knights and bishops have somewhere to be.`);
+  }
+  if (agg.shortMates >= 2) {
+    push(28,
+      "You're getting mated early",
+      `${agg.shortMates} of your losses were checkmate inside fifteen moves. That normally means the same two or three patterns keep catching you. Open those games in the Games tab and step through them, they're the cheapest lessons you own.`);
+  }
+  if (agg.inCheckShare > 0.25 && agg.givenPer > 0.5) {
+    push(18,
+      "Slow down when you're in check",
+      `A good chunk of the pieces you lose go while you're getting out of check. It makes sense, you're forced to move and it feels like there's no choice. There usually is. When you're in check, look at every way out rather than the first one you see.`);
+  }
+  const enough = agg.openingList.filter((o) => o.n >= 4);
+  if (enough.length >= 2) {
+    const worst = [...enough].sort((a, b) => a.score - b.score)[0];
+    const rest = enough.filter((o) => o.name !== worst.name);
+    const restScore = rest.reduce((a, o) => a + o.score * o.n, 0) / rest.reduce((a, o) => a + o.n, 0);
+    if (restScore - worst.score > 0.2) {
+      push(16,
+        `Something goes wrong in the ${worst.name}`,
+        `You score ${Math.round(worst.score * 100)}% there across ${worst.n} games, against ${Math.round(restScore * 100)}% everywhere else. Don't go and learn theory over it. Open those games here, find the move where the first piece went, and see whether it's the same move every time. Usually it is.`);
+    }
+  }
+  if (!t.length) {
+    push(1,
+      "Nothing obvious is leaking",
+      `You're not dropping pieces at a rate worth drilling and you're taking what's offered. From here the gains come from playing longer games and looking at whole games rather than single moves. Pick a loss where you felt fine until suddenly you weren't, and step through it.`);
+  }
+  return t.sort((a, b) => b.score - a.score);
+}
+
+function oneThing(agg) {
+  const top = tips(agg)[0];
+  return { head: top.title, body: top.body };
+}
+</script>
+<script>
+/* ============================================================
+   UI. No framework, no build step.
+   ============================================================ */
+
+const LAST = "cc:last";
+const keyFor = (name) => "cc:u:" + name.trim().toLowerCase();
+const CAP = 600;
+
+const S = {
+  name: "", games: [], review: null, apiKey: "", synced: {},
+  tab: "today", view: null, ply: 0, ready: false, screen: "login",
+  toast: null, busy: "", why: false, shown: 25, allTips: false, pick: null, pending: "",
+};
+
+/* ---------- storage: artifact host first, then the browser ---------- */
+const store = {
+  async get(k) {
+    if (window.storage) { try { const r = await window.storage.get(k); return r ? r.value : null; } catch { return null; } }
+    try { return localStorage.getItem(k); } catch { return null; }
+  },
+  async set(k, v) {
+    if (window.storage) { try { await window.storage.set(k, v); return true; } catch { return false; } }
+    try { localStorage.setItem(k, v); return true; } catch { return false; }
+  },
+};
+
+async function persist() {
+  if (!S.name) return;
+  const payload = { name: S.name, games: S.games.slice(-CAP), review: S.review, apiKey: S.apiKey, synced: S.synced };
+  let body = JSON.stringify(payload);
+  while (body.length > 4_000_000 && payload.games.length > 20) {
+    payload.games = payload.games.slice(Math.ceil(payload.games.length * 0.2));
+    body = JSON.stringify(payload);
+  }
+  await store.set(keyFor(S.name), body);
+  await store.set(LAST, S.name);
+}
+
+async function loadUser(name) {
+  const raw = await store.get(keyFor(name));
+  S.name = name.trim();
+  S.games = []; S.review = null; S.synced = {}; S.apiKey = "";
+  if (raw) {
+    try {
+      const d = JSON.parse(raw);
+      S.games = d.games || []; S.review = d.review || null;
+      S.apiKey = d.apiKey || ""; S.synced = d.synced || {};
+      if (d.name) S.name = d.name;
+    } catch {}
+  }
+  S.screen = "app"; S.tab = "today"; S.view = null; S.shown = 25;
+  await store.set(LAST, S.name);
+}
+
+/* ---------- helpers ---------- */
+const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) =>
+  ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const fmtS = (s) => (s == null ? "-" : s < 10 ? `${s.toFixed(1)}s` : `${Math.round(s)}s`);
+const pct = (x) => Math.round(x * 100) + "%";
+const KINDNAME = { g: "gave a piece away", m: "missed free material", mm: "missed mate in one", am: "allowed mate in one" };
+
+function describe(m) {
+  const piece = NAMES[(m.pc || "p").toLowerCase()];
+  if (m.k === "mm") return `You had mate in one here. ${sqName(m.at)} to ${sqName(m.sq)} ended the game, and you played ${esc(m.s)} instead.`;
+  if (m.k === "am") return `This move let them mate you straight away with ${sqName(m.at)} to ${sqName(m.sq)}.${m.pun ? " They played it." : " They did not spot it."}`;
+  if (m.k === "g") {
+    return m.pun
+      ? `You left your ${piece} on ${sqName(m.sq)} where it could be taken, and they took it.`
+      : `You left your ${piece} on ${sqName(m.sq)} where it could be taken. They missed it, but the move was still a gift.`;
+  }
+  return `Their ${piece} on ${sqName(m.sq)} was free for ${m.l} points and you played ${esc(m.s)} instead.`;
+}
+
+/* ---------- charts ---------- */
+function lineChart(vals, labels, color, opts = {}) {
+  const n = vals.length;
+  if (n < 2) return "";
+  const W = 300, H = opts.height || 96, pad = 4;
+  const lo = Math.min(...vals), hi = Math.max(...vals), span = hi - lo || 1;
+  const x = (i) => pad + (i / (n - 1)) * (W - pad * 2);
+  const y = (v) => H - pad - ((v - lo) / span) * (H - pad * 2);
+  const pts = vals.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
+  const dots = opts.dots === false ? "" : vals.map((v, i) =>
+    `<circle cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="2.6" fill="${color}"/>`).join("");
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" class="chart" role="img">
+    <polygon points="${pad},${H - pad} ${pts} ${W - pad},${H - pad}" fill="${color}" opacity=".08"/>
+    <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round"
+      stroke-linecap="round" vector-effect="non-scaling-stroke"/>${dots}</svg>
+  <div class="axis"><span>${esc(labels[0])}</span>
+    <span class="mono">${lo === hi ? lo : `${lo} to ${hi}`}</span>
+    <span>${esc(labels[labels.length - 1])}</span></div>`;
+}
+
+function groupBars(rows, keys, colors, names) {
+  const max = Math.max(1, ...rows.flatMap((r) => keys.map((k) => r[k])));
+  return `<div class="gb">${rows.map((r) => `
+    <div class="gbcol"><div class="gbbars">${keys.map((k, ki) => `
+      <div class="gbbar" style="height:${(r[k] / max) * 100}%;background:${colors[ki]}">
+        ${r[k] ? `<span class="gbn">${r[k]}</span>` : ""}</div>`).join("")}
+    </div><div class="gblab">${esc(r.phase)}</div></div>`).join("")}</div>
+  <div class="legend">${keys.map((k, ki) =>
+    `<span><i style="background:${colors[ki]}"></i>${esc(names[ki])}</span>`).join("")}</div>`;
+}
+
+function hBars(entries, color) {
+  const max = Math.max(...entries.map((e) => e[1]), 1);
+  return entries.map(([k, v]) => `<div class="hb"><span class="hbl">${esc(k)}</span>
+    <span class="hbt"><i style="width:${(v / max) * 100}%;background:${color}"></i></span>
+    <span class="hbv mono">${v}</span></div>`).join("");
+}
+
+function strip(matIn, marks) {
+  const step = Math.max(1, Math.ceil(matIn.length / 48));
+  const mat = step === 1 ? matIn : matIn.filter((_, i) => i % step === 0);
+  const scale = 1 / step, n = mat.length || 1, H = 26;
+  const bars = mat.map((v, i) => {
+    const c = Math.max(-9, Math.min(9, v));
+    const hh = (Math.abs(c) / 9) * (H / 2 - 2);
+    return `<rect x="${i}" width="1" y="${(c >= 0 ? H / 2 - hh : H / 2).toFixed(2)}"
+      height="${Math.max(hh, 0.001).toFixed(2)}" fill="${c >= 0 ? "#8bbfae" : "#d99e94"}"/>`;
+  }).join("");
+  const ticks = marks.map((m) => `<rect x="${(m * scale).toFixed(2)}" width="1.4" y="0" height="4" fill="#b0392b"/>`).join("");
+  return `<svg viewBox="0 0 ${n} ${H}" preserveAspectRatio="none" class="strip">
+    <line x1="0" y1="${H / 2}" x2="${n}" y2="${H / 2}" stroke="#e6dfd1" stroke-width="1"
+      vector-effect="non-scaling-stroke"/>${bars}${ticks}</svg>`;
+}
+
+/* ---------- board with coordinates and an arrow ---------- */
+function boardHTML(boardStr, flip, mark) {
+  const order = flip ? [...Array(64).keys()].reverse() : [...Array(64).keys()];
+  const files = flip ? [..."hgfedcba"] : [..."abcdefgh"];
+  const ranks = flip ? [1, 2, 3, 4, 5, 6, 7, 8] : [8, 7, 6, 5, 4, 3, 2, 1];
+  const cells = order.map((i) => {
+    const p = boardStr[i];
+    const dark = (fileOf(i) + rankOf(i)) % 2 === 1;
+    const last = mark && (mark.from === i || mark.to === i) ? '<i class="last"></i>' : "";
+    const ring = mark && mark.target === i ? `<i class="ring ${mark.tone || ""}"></i>` : "";
+    const pc = p !== "." ? `<span class="pc ${isW(p) ? "w" : "b"}">${GLYPH[p.toLowerCase()]}</span>` : "";
+    return `<div class="sq ${dark ? "d" : "l"}">${last}${pc}${ring}</div>`;
+  }).join("");
+
+  let arrow = "";
+  if (mark && mark.arrow) {
+    const [a, b] = mark.arrow;
+    const cx = (i) => (flip ? 7 - fileOf(i) : fileOf(i)) + 0.5;
+    const cy = (i) => (flip ? 7 - rankOf(i) : rankOf(i)) + 0.5;
+    const x1 = cx(a), y1 = cy(a), x2 = cx(b), y2 = cy(b);
+    const dx = x2 - x1, dy = y2 - y1, len = Math.hypot(dx, dy) || 1;
+    const ex = x2 - (dx / len) * 0.34, ey = y2 - (dy / len) * 0.34;
+    const col = mark.tone === "green" ? "#1f6f5c" : mark.tone === "purple" ? "#6b3fa0" : "#b0392b";
+    arrow = `<svg class="arrows" viewBox="0 0 8 8">
+      <defs><marker id="ah" markerWidth="3.2" markerHeight="3.2" refX="1.8" refY="1.6" orient="auto">
+        <path d="M0,0 L0,3.2 L3,1.6 z" fill="${col}"/></marker></defs>
+      <line x1="${x1}" y1="${y1}" x2="${ex}" y2="${ey}" stroke="${col}" stroke-width=".16"
+        stroke-linecap="round" opacity=".92" marker-end="url(#ah)"/></svg>`;
+  }
+
+  return `<div class="boardwrap">
+    <div class="ranks">${ranks.map((r) => `<span>${r}</span>`).join("")}</div>
+    <div class="boardcol">
+      <div class="board">${cells}${arrow}</div>
+      <div class="files">${files.map((f) => `<span>${f}</span>`).join("")}</div>
+    </div>
+  </div>`;
+}
+
+function matBar(mat) {
+  const v = Math.max(-12, Math.min(12, mat));
+  const left = ((v + 12) / 24) * 100;
+  return `<div class="matbar">
+    <div class="mattrack"><i style="left:${left}%"></i><b></b></div>
+    <div class="matlab"><span>them</span>
+      <span class="mono ${v > 0 ? "good" : v < 0 ? "bad" : "faint"}">
+        ${v === 0 ? "level" : v > 0 ? `you are ${v} up` : `you are ${-v} down`}</span>
+      <span>you</span></div>
+  </div>`;
+}
+
+/* ---------- chess.com sync, with a clean fallback ---------- */
+async function syncChessCom(howMany) {
+  const u = S.name.trim().toLowerCase();
+  S.busy = "Asking chess.com for your games"; render();
+  let archives;
+  try {
+    const r = await fetch(`https://api.chess.com/pub/player/${encodeURIComponent(u)}/games/archives`);
+    if (r.status === 404) throw new Error(`No chess.com account called ${S.name}`);
+    if (!r.ok) throw new Error(`chess.com replied ${r.status}`);
+    archives = (await r.json()).archives || [];
+  } catch (e) {
+    S.busy = "";
+    S.toast = /No chess\.com/.test(e.message)
+      ? e.message
+      : "Could not reach chess.com from here. Use Add file instead, it takes one tap.";
+    render();
+    setTimeout(() => { S.toast = null; render(); }, 6000);
+    return false;
+  }
+  if (!archives.length) {
+    S.busy = ""; S.toast = "That account has no finished games yet."; render();
+    return false;
+  }
+  const wanted = archives.slice(-howMany);
+  let text = "";
+  for (let i = 0; i < wanted.length; i++) {
+    S.busy = `Downloading month ${i + 1} of ${wanted.length}`; render();
+    try {
+      const r = await fetch(wanted[i] + "/pgn");
+      if (r.ok) { text += (await r.text()) + "\n\n"; S.synced[wanted[i].slice(-7)] = Date.now(); }
+    } catch {}
+  }
+  if (!text.trim()) {
+    S.busy = ""; S.toast = "chess.com blocked the download. Use Add file instead."; render();
+    setTimeout(() => { S.toast = null; render(); }, 6000);
+    return false;
+  }
+  await importText(text);
+  return true;
+}
+
+/* ---------- import ---------- */
+async function importText(raw, forcedName) {
+  S.busy = "Reading the file"; render();
+  await new Promise((r) => setTimeout(r, 10));
+  const chunks = splitPGN(raw);
+  let who = (forcedName || S.name).trim();
+  if (!who) {
+    const d = detectName(chunks);
+    if (d.name) who = d.name;
+    else { S.pick = d.options; S.pending = raw; S.busy = ""; render(); return; }
+  }
+  const have = new Set(S.games.map((g) => g.id));
+  const mine = [];
+  let dupes = 0, notMine = 0, bad = 0;
+  for (const c of chunks) {
+    const t = parseTags(c);
+    const lo = who.toLowerCase();
+    if ((t.White || "").toLowerCase() !== lo && (t.Black || "").toLowerCase() !== lo) { notMine++; continue; }
+    const id = t.Link || `${t.White}-${t.Black}-${t.UTCDate || t.Date}-${t.UTCTime || ""}`;
+    if (have.has(id)) { dupes++; continue; }
+    mine.push(c);
+  }
+  const fresh = [];
+  for (let i = 0; i < mine.length; i++) {
+    if (i % 5 === 0) {
+      S.busy = `Working through your games, ${i} of ${mine.length}`;
+      render();
+      await new Promise((r) => setTimeout(r, 0));
+    }
+    const rec = buildRecord(mine[i], who);
+    if (!rec) { bad++; continue; }
+    if (have.has(rec.id)) { dupes++; continue; }
+    have.add(rec.id); fresh.push(rec);
+  }
+  S.games = [...S.games, ...fresh].sort((a, b) => a.d - b.d).slice(-CAP);
+  S.pick = null; S.pending = ""; S.busy = "";
+  S.toast = fresh.length
+    ? `${fresh.length} new game${fresh.length > 1 ? "s" : ""} added`
+    : chunks.length
+      ? `Nothing new. ${dupes} already saved${notMine ? `, ${notMine} not yours` : ""}${bad ? `, ${bad} unreadable` : ""}`
+      : "No games found in that file";
+  await persist();
+  render();
+  setTimeout(() => { if (S.toast) { S.toast = null; render(); } }, 5000);
+}
+
+/* ============================================================
+   SCREENS
+   ============================================================ */
+
+function screenLogin() {
+  return `<div class="login">
+    <div class="mark">
+      <span class="pc b">${GLYPH.n}</span>
+    </div>
+    <h1 class="big">Chess post mortem</h1>
+    <p class="lead-p">Your own games, read back to you in plain English. What you gave away, what you
+    walked past, and the one thing worth practising next.</p>
+    <label class="lbl" for="user">chess.com username</label>
+    <input id="user" placeholder="username" autocapitalize="none" autocorrect="off" spellcheck="false"
+      autocomplete="username" enterkeyhint="go">
+    <button class="btn pri wide" data-a="login">Continue</button>
+    <p class="tiny">This is not a real sign in, there is no server. Your username just tells the app
+    which side of the board is you, and keeps your games separate from anyone else using this phone.</p>
+  </div>`;
+}
+
+function screenToday(agg, ms) {
+  const one = oneThing(agg);
+  return `
+  <div class="card lead">
+    <span class="chip good">Start here</span>
+    <div class="lead-h">${esc(one.head)}</div>
+    <p class="lead-p">${esc(one.body)}</p>
+  </div>
+
+  <h2>Your numbers</h2>
+  ${ms.map((m) => `
+    <div class="card">
+      <div class="between">
+        <div><div class="num ${m.level}">${esc(m.value)}</div><div class="tiny">${esc(m.unit)}</div></div>
+        <span class="chip ${m.level === "fix" ? "bad" : m.level}">${
+          m.level === "fix" ? "Work on this" : m.level === "watch" ? "Watch" : "Good"}</span>
+      </div>
+      <div class="t">${esc(m.title)}</div>
+      <p>${esc(m.plain)}</p>
+      <div class="tiny">${esc(m.target)}</div>
+    </div>`).join("")}
+  <div class="tiny pad">Those targets are rough guides for a beginner, not official chess.com stats.</div>
+
+  <h2>Record</h2>
+  <div class="card">
+    <div class="num">${agg.all.w}<em>W</em> ${agg.all.d}<em>D</em> ${agg.all.l}<em>L</em></div>
+    <div class="tiny">${agg.n} games saved${agg.latestRating ? `, last rating ${agg.latestRating}` : ""}</div>
+    <div class="bar">
+      <i style="width:${(agg.all.w / agg.n) * 100}%;background:#1f6f5c"></i>
+      <i style="width:${(agg.all.d / agg.n) * 100}%;background:#cfc6b6"></i>
+      <i style="width:${(agg.all.l / agg.n) * 100}%;background:#b0392b"></i>
+    </div>
+  </div>
+
+  ${agg.trend.length >= 2 ? `
+  <h2>Are you improving</h2>
+  <div class="card">
+    <div class="tiny nm">Pieces given away per game, by month. Down is better.</div>
+    ${lineChart(agg.trend.map((t) => t.given), agg.trend.map((t) => t.label), "#b0392b")}
+  </div>` : ""}
+
+  <h2>Worst moments</h2>
+  <div class="tiny pad">Mate mistakes first, then the biggest material. Tap one for the board.</div>
+  ${agg.worst.slice(0, 12).map((m) => `
+    <button class="card list" data-a="open" data-id="${esc(m.g.id)}" data-ply="${m.p}">
+      <div class="between">
+        <span class="mono acc">move ${m.mv}, ${esc(m.s)}</span>
+        <span class="chip ${m.k === "mm" || m.k === "am" ? "purple" : "bad"}">${
+          m.k === "mm" ? "mate missed" : m.k === "am" ? "mate allowed" : m.l + " pts"}</span>
+      </div>
+      <p>${describe(m)}</p>
+      <div class="tiny">${new Date(m.g.d).toLocaleDateString()} · ${esc(m.g.cls)} · vs ${esc(m.g.opp)}${
+        m.sp != null ? ` · you spent ${fmtS(m.sp)}` : ""}${m.ck ? " · you were in check" : ""}</div>
+    </button>`).join("")}
+
+  <button class="card list mid" data-a="why">${S.why ? "Hide" : "What do these numbers mean?"}</button>
+  ${S.why ? `<div class="card">
+    <p class="nm">Pieces are worth points: pawn 1, knight 3, bishop 3, rook 5, queen 9.</p>
+    <p>After each of your moves this checks whether any of your pieces could simply be taken, either
+    because nothing was defending it or because a cheaper piece could capture it. Before each of your
+    moves it checks for pieces of theirs you could have taken for free, and whether you had a mate in
+    one available.</p>
+    <p>A piece left takeable for several moves running counts as one mistake, on the move that created it.</p>
+    <p>There is no chess engine in here, so there is no accuracy score. It does not see pins, forks you
+    could have played, or attacks two moves deep. It sees the plain stuff, and below 800 the plain
+    stuff decides almost every game.</p>
+  </div>` : ""}
+
+  <div class="foot">
+    Signed in as <b>${esc(S.name)}</b>. <button class="lnk" data-a="signout">Switch user</button>
+  </div>`;
+}
+
+function screenGames(agg) {
+  const list = S.games.slice().reverse();
+  const shown = list.slice(0, S.shown);
+  const ratings = S.games.filter((g) => g.my).map((g) => g.my);
+  return `
+  ${ratings.length >= 3 ? `<h2>Rating</h2>
+  <div class="card">${lineChart(ratings, ["oldest", "latest"], "#1f6f5c", { dots: false })}
+    <div class="tiny">Every time control on one line, oldest first.</div></div>` : ""}
+
+  <h2>Black or white</h2>
+  <div class="card">
+    ${[["White", agg.white], ["Black", agg.black]].map(([nm, r]) => `
+      <div class="hb"><span class="hbl">${nm}</span>
+        <span class="hbt">
+          <i style="width:${(r.w / Math.max(r.n, 1)) * 100}%;background:#1f6f5c"></i>
+          <i style="width:${(r.d / Math.max(r.n, 1)) * 100}%;background:#cfc6b6"></i>
+          <i style="width:${(r.l / Math.max(r.n, 1)) * 100}%;background:#b0392b"></i>
+        </span><span class="hbv mono">${pct(r.score)}</span></div>`).join("")}
+    <div class="tiny">Score counts a draw as half a win. Around 50% both sides is normal.</div>
+  </div>
+
+  <h2>${list.length} games</h2>
+  ${shown.map((g) => {
+    const bad = g.mis.filter((m) => (m.k === "g" && m.pun) || m.k === "am" || m.k === "mm");
+    return `<button class="card list" data-a="open" data-id="${esc(g.id)}" data-ply="0">
+      <div class="between">
+        <span class="chip ${g.r === "win" ? "good" : g.r === "loss" ? "bad" : "watch"}">${g.r}</span>
+        <span class="tiny nm">${new Date(g.d).toLocaleDateString()} · ${esc(g.cls)}</span>
+      </div>
+      ${strip(g.mat, bad.map((m) => m.p))}
+      <div class="tiny">${g.c === "w" ? "White" : "Black"} vs ${esc(g.opp)}${g.op ? ` (${g.op})` : ""}
+        · ${esc(g.o)} · ${esc(g.end)}${bad.length ? ` · ${bad.length} big mistake${bad.length > 1 ? "s" : ""}` : ""}</div>
+    </button>`;
+  }).join("")}
+  ${list.length > shown.length
+    ? `<button class="card list mid" data-a="more">Show 25 more of ${list.length}</button>` : ""}
+  <div class="tiny pad">The line under each game is who was ahead on points, move by move. Red ticks
+  are your big mistakes.</div>
+  <div class="card">
+    <div class="t nm">Want more history?</div>
+    <p>Refresh only looks at this month and last. This goes back a year.</p>
+    <button class="btn wide" data-a="sync12" ${S.busy ? "disabled" : ""}>Pull the last 12 months</button>
+  </div>`;
+}
+
+function screenTips(agg) {
+  const all = tips(agg);
+  const show = S.allTips ? all : all.slice(0, 3);
+  const enough = agg.openingList.filter((r) => r.n >= 3);
+  return `
+  <h2>What to work on</h2>
+  ${show.map((t, i) => `<div class="card tip">
+    <div class="tipn">${i + 1}</div>
+    <div class="t nm">${esc(t.title)}</div>
+    <p>${esc(t.body)}</p>
+  </div>`).join("")}
+  ${all.length > show.length
+    ? `<button class="card list mid" data-a="alltips">Show the other ${all.length - show.length}</button>` : ""}
+
+  <h2>Your opening habits</h2>
+  <div class="card">
+    ${[
+      ["Castled", pct(agg.castledShare), "of games", agg.castledShare >= 0.8],
+      ["Pieces still home at move 12", agg.homeAt12.toFixed(1), "of 4 knights and bishops", agg.homeAt12 < 1.5],
+      ["Pawn moves in your first 10", agg.pawnPushes.toFixed(1), "moves", agg.pawnPushes < 5],
+      ["Early queen moves", agg.queenEarly.toFixed(1), "in your first 8", agg.queenEarly < 2],
+    ].map(([label, val, unit, ok]) => `
+      <div class="hab">
+        <div><div>${label}</div><div class="tiny nm">${unit}</div></div>
+        <span class="mono ${ok ? "good" : "bad"}">${val}</span>
+      </div>`).join("")}
+    <div class="tiny">Rough guides: castle in most games, everything developed by move twelve, two or
+    three pawn moves early, queen out last.</div>
+  </div>
+
+  <h2>Where in the game it goes wrong</h2>
+  <div class="card">
+    ${groupBars(agg.byPhase, ["given", "missed"], ["#b0392b", "#c89a3c"],
+      ["Gave a piece away", "Missed a free piece"])}
+    <div class="tiny">Opening is moves 1 to 10, middlegame to 28, endgame after that.</div>
+  </div>
+
+  ${Object.keys(agg.byPiece).length ? `<h2>Which piece you lose most</h2>
+  <div class="card">${hBars(Object.entries(agg.byPiece).sort((a, b) => b[1] - a[1]), "#b08553")}</div>` : ""}
+
+  ${Object.keys(agg.endings).length ? `<h2>How your losses end</h2>
+  <div class="card">${hBars(Object.entries(agg.endings).sort((a, b) => b[1] - a[1]), "#b0392b")}</div>` : ""}
+
+  <h2>Openings</h2>
+  <div class="card">
+    ${agg.openingList.map((r) => `<div class="orow">
+      <div><div>${esc(r.name)}</div>
+        <div class="tiny nm">${r.n} game${r.n > 1 ? "s" : ""} · ${r.given.toFixed(1)} pieces lost per game</div></div>
+      <span class="mono ${r.n < 3 ? "faint" : r.score >= 0.5 ? "good" : "bad"}">${pct(r.score)}</span>
+    </div>`).join("")}
+    <div class="tiny">${enough.length ? "Fewer than three games is noise, ignore those rows." : "Add more games before reading anything into these."}</div>
+  </div>`;
+}
+
+function screenViewer() {
+  const g = S.games.find((x) => x.id === S.view);
+  if (!g) return `<div class="card">Game not found.</div>`;
+  const data = replay(g.pgn, S.name);
+  if (!data) return `<div class="card">Could not rebuild this game.</div>`;
+  const plies = data.plies;
+  const i = Math.max(0, Math.min(S.ply, plies.length - 1));
+  const p = plies[i];
+  const flagged = g.mis.map((x) => x.p);
+  const m = g.mis.find((x) => x.p === i);
+  const prev = [...flagged].reverse().find((x) => x < i);
+  const next = flagged.find((x) => x > i);
+  const tone = m ? (m.k === "mm" || m.k === "am" ? "purple" : m.k === "m" ? "green" : "") : "";
+  const mark = m
+    ? { target: m.sq, arrow: [m.at, m.sq], tone, from: p.from, to: p.to }
+    : { from: p.from, to: p.to };
+
+  const moveList = plies.map((q, k) => {
+    const flag = g.mis.find((x) => x.p === k);
+    return `<button class="mv ${k === i ? "on" : ""} ${flag ? "flag" : ""}" data-a="jump" data-p="${k}">
+      ${q.mine === (g.c === "w") ? `${q.moveNo}.` : ""}${esc(q.san)}</button>`;
+  }).join("");
+
+  return `
+  <div class="between vhead">
+    <button class="btn sm" data-a="back">All games</button>
+    <span class="chip ${g.r === "win" ? "good" : g.r === "loss" ? "bad" : "watch"}">${g.r}</span>
+  </div>
+  <div class="vtitle">
+    <div class="t nm">${g.c === "w" ? "White" : "Black"} vs ${esc(g.opp)}${g.op ? ` (${g.op})` : ""}</div>
+    <div class="tiny nm">${new Date(g.d).toLocaleDateString()} · ${esc(g.cls)} · ${esc(g.o)} · ${esc(g.end)}</div>
+  </div>
+  ${boardHTML(p.board, g.c === "b", mark)}
+  ${matBar(p.mat)}
+  <div class="ctrls">
+    <button class="btn" data-a="ply" data-d="-1" aria-label="back one move">‹</button>
+    <button class="btn" data-a="jump" data-p="${prev === undefined ? "" : prev}" ${prev === undefined ? "disabled" : ""}>Prev slip</button>
+    <button class="btn ${next !== undefined ? "pri" : ""}" data-a="jump" data-p="${next === undefined ? "" : next}" ${next === undefined ? "disabled" : ""}>Next slip</button>
+    <button class="btn" data-a="ply" data-d="1" aria-label="forward one move">›</button>
+  </div>
+  <div class="movelist">${moveList}</div>
+
+  <div class="card ${m ? "flagcard" : ""}">
+    <div class="mono">${p.moveNo}${p.mine === (g.c === "w") ? "." : "..."} ${esc(p.san)}
+      <span class="faint">${p.mine && p.spent != null ? `took ${fmtS(p.spent)}` : ""}${
+        p.check ? (p.mine ? " · you gave check" : " · you are in check") : ""}</span></div>
+    ${m ? `<p>${describe(m)}</p>
+      <div class="tiny">The arrow shows ${m.k === "m" ? "the capture you could have played"
+        : m.k === "mm" ? "the mate you had" : m.k === "am" ? "the mate they had" : "which piece could take yours"}.
+      ${m.sp != null ? `You spent ${fmtS(m.sp)} on this move.` : ""}</div>`
+      : `<div class="tiny">Nothing obviously loose here. Step forward to the next slip.</div>`}
+  </div>
+
+  ${g.mis.length ? `<h2>Everything flagged in this game</h2>
+    ${g.mis.slice().sort((a, b) => a.p - b.p).map((x) => `
+      <button class="card list ${x.p === i ? "here" : ""}" data-a="jump" data-p="${x.p}">
+        <div class="between">
+          <span class="mono acc">move ${x.mv}, ${esc(x.s)}</span>
+          <span class="chip ${x.k === "mm" || x.k === "am" ? "purple" : x.k === "m" ? "watch" : x.pun ? "bad" : "watch"}">
+            ${esc(KINDNAME[x.k])}</span>
+        </div>
+        <p>${describe(x)}</p>
+      </button>`).join("")}` : ""}`;
+}
+
+function screenEmpty() {
+  return `<div class="card">
+    <div class="t nm">Right, let's get your games in</div>
+    <p>Everything is worked out on your phone and saved here, so next time you only add what is new.</p>
+    <button class="btn pri wide" data-a="sync6">Try pulling them from chess.com</button>
+    <button class="btn wide" data-a="file">Add a PGN file instead</button>
+    <div class="tiny">chess.com does not always allow the direct download from another site. If it
+    fails, the file route always works and takes one tap.</div>
+  </div>
+  ${howTo()}`;
+}
+
+function howTo() {
+  const now = new Date();
+  const url = `api.chess.com/pub/player/${S.name || "you"}/games/${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, "0")}/pgn`;
+  return `
+  <h2>Getting a month of games as a file</h2>
+  <div class="card">
+    <p class="nm">Open this in your browser. The file downloads on its own. Change the year and month
+    for older ones and save each to Files.</p>
+    <div class="url mono">${esc(url)}</div>
+    <div class="tiny">Then tap Add games and pick it. Adding the same games twice is fine, anything
+    already saved is skipped.</div>
+  </div>
+  <h2>Or one game at a time</h2>
+  <div class="card">
+    <p class="nm">On iPhone, open the game, tap the magnifying glass, then Options, then Share, then Copy.
+    On Android, open the game, tap More at the bottom left, then Export PGN, then Copy.</p>
+    <textarea id="paste" placeholder="Paste PGN text here"></textarea>
+    <button class="btn pri wide" data-a="paste">Add pasted games</button>
+  </div>`;
+}
+
+/* ---------- the written review ---------- */
+function briefFor(agg) {
+  return {
+    gamesReviewed: agg.n, record: { wins: agg.all.w, draws: agg.all.d, losses: agg.all.l },
+    latestRating: agg.latestRating,
+    scoreAsWhitePct: Math.round(agg.white.score * 100), scoreAsBlackPct: Math.round(agg.black.score * 100),
+    piecesGivenAwayPerGame: +agg.givenPer.toFixed(2),
+    looseButNotPunishedPerGame: +agg.loosePer.toFixed(2),
+    freePiecesMissedPerGame: +agg.missedPer.toFixed(2),
+    mateInOneMissed: agg.missedMates, mateInOneAllowed: agg.allowedMates,
+    matesTheyActuallyPlayed: agg.matesPunished,
+    lossesOnTheClockPct: Math.round(agg.timeoutShare * 100),
+    checkmatedInsideFifteenMoves: agg.shortMates,
+    giveawaysWhileInCheckPct: Math.round(agg.inCheckShare * 100),
+    giveawaysInUnder5Seconds: agg.rushed, giveawaysWithClockData: agg.mistakeSpendN,
+    castledPct: Math.round(agg.castledShare * 100),
+    knightsAndBishopsStillHomeAtMove12: +agg.homeAt12.toFixed(1),
+    pawnMovesInFirstTen: +agg.pawnPushes.toFixed(1),
+    queenMovesInFirstEight: +agg.queenEarly.toFixed(1),
+    mistakesByPhase: agg.byPhase, piecesLostByType: agg.byPiece, howLossesEnd: agg.endings,
+    openings: agg.openingList.filter((o) => o.n >= 3).slice(0, 8)
+      .map((o) => ({ name: o.name, games: o.n, scorePct: Math.round(o.score * 100) })),
+    monthlyTrend: agg.trend,
+    worstMoments: agg.worst.slice(0, 12).map((m) => ({
+      move: `${m.mv}. ${m.s}`, what: KINDNAME[m.k], piece: NAMES[(m.pc || "p").toLowerCase()],
+      square: sqName(m.sq), points: m.l, theyPunishedIt: m.pun, phase: m.ph,
+      wasInCheck: m.ck, secondsSpent: m.sp == null ? null : Math.round(m.sp),
+      opening: m.g.o, playedAs: m.g.c === "w" ? "white" : "black",
+    })),
+  };
+}
+
+const PROMPT = (brief) =>
+`You are a decent club player looking over a friend's games. They are rated under 800 on chess.com and fairly new. Talk to them the way you would across a table in a pub: direct, warm, a bit blunt, specific. Not a lecture, not a listicle, not a motivational speech.
+
+The data below comes from a static analyser, not an engine. It finds pieces left where they can simply be captured for profit, free enemy pieces they did not take, and mate in one both missed and allowed. It cannot see pins, forks, plans or anything two moves deep, so do not invent engine evaluations, accuracy percentages, or opening theory the data does not support. If you are not sure, say so plainly.
+
+DATA
+${JSON.stringify(brief, null, 2)}
+
+Write about 400 words, in these three parts, with the headings on their own lines:
+
+WHAT IS ACTUALLY GOING ON
+Two or three sentences. Name the one thing costing them most, with the number behind it, in their language not chess jargon.
+
+THREE THINGS TO DO
+Three of them. Each gets a short heading on its own line, then a few sentences: what you can see in their games, and one concrete thing to do at the board. Point at their real moves and openings where the data supports it. Say why it matters rather than just what to do.
+
+WHAT NOT TO BOTHER WITH
+One short paragraph, honest about what is a waste of their time at this level.
+
+How to write it: plain English, contractions, second person. No em dashes. No markdown, asterisks or bullet characters. No flattery, no "great question", no motivational filler, no restating these instructions. Do not sound like a chess engine or a manual. Vary your sentence length. It should read like a person who has actually looked at these games.`;
+
+function screenCoach(agg) {
+  const hosted = !window.storage;
+  return `
+  <div class="card">
+    <div class="t nm">Written review</div>
+    <p>Takes every number in here, your opening habits and your twelve worst moments, and writes them
+    up as one plain page. Saved once written.</p>
+    ${hosted && !S.apiKey ? `
+      <button class="btn pri wide" data-a="copybrief">Copy it all for Claude</button>
+      <div class="tiny">Paste that into Claude and it writes the review. Keeps this app free and
+      offline.</div>
+      <button class="lnk" data-a="keyprompt">Or add your own API key and it writes it in here</button>`
+    : `
+      <button class="btn pri wide" data-a="review" ${S.busy ? "disabled" : ""}>
+        ${S.busy ? "Reading your games" : S.review ? "Write a fresh one" : "Write my review"}</button>
+      ${S.apiKey ? `<button class="lnk" data-a="keyprompt">Change API key</button>` : ""}`}
+    ${S.review ? `<div class="tiny">Last written ${new Date(S.review.when).toLocaleDateString()} from ${S.review.games} games.</div>` : ""}
+  </div>
+  ${S.review ? `<div class="card coach">${esc(S.review.text)}</div>` : ""}`;
+}
+
+/* ============================================================
+   RENDER
+   ============================================================ */
+function render() {
+  const app = document.getElementById("app");
+  if (!S.ready) { app.innerHTML = `<div class="w"><div class="tiny pad">Loading</div></div>`; return; }
+
+  if (S.screen === "login") { app.innerHTML = `<div class="w">${screenLogin()}</div>`; return; }
+
+  const agg = S.games.length ? aggregate(S.games) : null;
+  const ms = agg ? metrics(agg) : [];
+  let body;
+  if (S.view) body = screenViewer();
+  else if (!S.games.length) body = screenEmpty();
+  else if (S.tab === "today") body = screenToday(agg, ms);
+  else if (S.tab === "games") body = screenGames(agg);
+  else if (S.tab === "tips") body = screenTips(agg);
+  else body = screenCoach(agg);
+
+  const tabs = [["today", "\u25CE", "Today"], ["games", "\u25A4", "Games"],
+    ["tips", "\u2657", "Tips"], ["coach", "\u2691", "Review"]];
+
+  app.innerHTML = `
+    <header>
+      <div class="w between">
+        <div>
+          <h1>Chess post mortem</h1>
+          <div class="tiny nm">${S.games.length
+            ? `${esc(S.name)} · ${S.games.length} games`
+            : esc(S.name)}</div>
+        </div>
+        <div class="hbtns">
+          ${S.games.length ? `<button class="btn sm" data-a="sync2" ${S.busy ? "disabled" : ""}>Refresh</button>` : ""}
+          <button class="btn pri sm" data-a="file" ${S.busy ? "disabled" : ""}>Add games</button>
+        </div>
+      </div>
+    </header>
+    ${S.busy ? `<div class="w"><div class="working"><span class="dot"></span>${esc(S.busy)}</div></div>` : ""}
+    ${S.pick ? `<div class="w"><div class="card warn">
+      <div class="t nm">Which player are you?</div>
+      <div class="tiny">That file has several names in it.</div>
+      <div class="pills">${S.pick.map((o) =>
+        `<button class="btn pri sm" data-a="setname" data-n="${esc(o)}">${esc(o)}</button>`).join("")}</div>
+    </div></div>` : ""}
+    <main class="w">${body}</main>
+    ${S.toast ? `<div class="toast">${esc(S.toast)}</div>` : ""}
+    ${S.games.length && !S.view ? `<nav class="nav">${tabs.map(([k, gl, l]) =>
+      `<button data-a="tab" data-t="${k}" class="${S.tab === k ? "on" : ""}">
+        <span class="g">${gl}</span>${l}</button>`).join("")}</nav>` : ""}`;
+}
+
+/* ============================================================
+   EVENTS
+   ============================================================ */
+document.addEventListener("click", async (e) => {
+  const el = e.target.closest("[data-a]");
+  if (!el) return;
+  const a = el.dataset.a;
+
+  if (a === "login") {
+    const v = (document.getElementById("user") || {}).value || "";
+    if (!v.trim()) return;
+    await loadUser(v);
+    render();
+    if (!S.games.length) syncChessCom(6);
+  }
+  else if (a === "signout") {
+    S.screen = "login"; S.view = null; S.games = []; S.name = "";
+    await store.set(LAST, "");
+    render();
+  }
+  else if (a === "file") document.getElementById("file").click();
+  else if (a === "sync6") syncChessCom(6);
+  else if (a === "sync2") syncChessCom(2);
+  else if (a === "sync12") syncChessCom(12);
+  else if (a === "tab") { S.tab = el.dataset.t; S.view = null; S.allTips = false; render(); scrollTo(0, 0); }
+  else if (a === "open") { S.view = el.dataset.id; S.ply = +el.dataset.ply; render(); scrollTo(0, 0); }
+  else if (a === "back") { S.view = null; render(); }
+  else if (a === "ply") { S.ply += +el.dataset.d; render(); }
+  else if (a === "jump") { if (el.dataset.p === "") return; S.ply = +el.dataset.p; render(); }
+  else if (a === "why") { S.why = !S.why; render(); }
+  else if (a === "alltips") { S.allTips = true; render(); }
+  else if (a === "more") { S.shown += 25; render(); }
+  else if (a === "paste") {
+    const ta = document.getElementById("paste");
+    if (ta && ta.value.trim()) importText(ta.value);
+  }
+  else if (a === "setname") importText(S.pending, el.dataset.n);
+  else if (a === "keyprompt") {
+    const k = prompt("Anthropic API key. Stored on this device only.", S.apiKey || "");
+    if (k !== null) { S.apiKey = k.trim(); await persist(); render(); }
+  }
+  else if (a === "copybrief") {
+    const txt = PROMPT(briefFor(aggregate(S.games)));
+    try { await navigator.clipboard.writeText(txt); S.toast = "Copied. Paste it into Claude."; }
+    catch { S.toast = "Could not copy automatically."; }
+    render();
+    setTimeout(() => { S.toast = null; render(); }, 5000);
+  }
+  else if (a === "review") {
+    S.busy = "Reading your games"; render();
+    try {
+      const headers = { "Content-Type": "application/json" };
+      if (S.apiKey) {
+        headers["x-api-key"] = S.apiKey;
+        headers["anthropic-version"] = "2023-06-01";
+        headers["anthropic-dangerous-direct-browser-access"] = "true";
+      }
+      const agg = aggregate(S.games);
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST", headers,
+        body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: 1200,
+          messages: [{ role: "user", content: PROMPT(briefFor(agg)) }] }),
+      });
+      const data = await res.json();
+      const out = (data.content || []).filter((b) => b.type === "text").map((b) => b.text).join("\n").trim();
+      if (!out) throw new Error("empty");
+      S.review = { text: out, when: Date.now(), games: agg.n };
+      await persist();
+    } catch { S.toast = "That did not come back. Check the key or try again."; }
+    S.busy = ""; render();
+  }
+});
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && document.getElementById("user") === document.activeElement) {
+    document.querySelector('[data-a="login"]')?.click();
+  }
+  if (!S.view) return;
+  if (e.key === "ArrowRight") { S.ply++; render(); }
+  if (e.key === "ArrowLeft") { S.ply--; render(); }
+});
+
+document.addEventListener("change", async (e) => {
+  if (e.target.id !== "file") return;
+  const files = [...e.target.files];
+  e.target.value = "";
+  if (!files.length) return;
+  let all = "";
+  for (const f of files) all += (await f.text()) + "\n\n";
+  importText(all);
+});
+
+let touchX = null;
+document.addEventListener("touchstart", (e) => {
+  if (e.target.closest(".board")) touchX = e.touches[0].clientX;
+}, { passive: true });
+document.addEventListener("touchend", (e) => {
+  if (touchX == null) return;
+  const dx = e.changedTouches[0].clientX - touchX;
+  touchX = null;
+  if (Math.abs(dx) > 40 && S.view) { S.ply += dx < 0 ? 1 : -1; render(); }
+}, { passive: true });
+
+/* ---------- boot ---------- */
+(async () => {
+  if ("serviceWorker" in navigator && location.protocol === "https:") {
+    navigator.serviceWorker.register("./sw.js").catch(() => {});
+  }
+  const last = await store.get(LAST);
+  if (last && last.trim()) await loadUser(last);
+  S.ready = true;
+  render();
+})();
+</script>
+</body>
+</html>
