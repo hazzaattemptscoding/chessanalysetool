@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Chess post mortem</title>
-<meta name="description" content="Your own chess.com games read back in plain English: what went well, what slipped, and what to practise next.">
+<meta name="description" content="Your own chess.com games in plain English: what went well, what slipped, what wins, and drills built from your own positions.">
 <meta name="theme-color" content="#faf7f1">
 <meta name="color-scheme" content="light">
 <meta name="mobile-web-app-capable" content="yes">
@@ -251,6 +251,37 @@ svg.pc.b .eye{fill:#e8dcc3;stroke:none}
 .good-card{background:#f4f9f6;border-color:#d5e6df}
 .story{font-size:14px;color:var(--soft);margin:8px 0 0;font-style:normal}
 .card.lead .tiny{margin-top:0}
+
+/* ---- intro ---- */
+.intro{padding:9vh 4px 40px;max-width:460px;margin:0 auto}
+.dots{display:flex;gap:6px;margin-bottom:20px}
+.dots i{width:22px;height:4px;border-radius:2px;background:#e6dfd1}
+.dots i.on{background:var(--good)}
+.introcard{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;margin-bottom:14px}
+.introt{font-size:22px;font-weight:700;letter-spacing:-.02em;line-height:1.2}
+.introcard p{font-size:15px;line-height:1.55}
+.intro .lnk{display:block;margin:14px auto 0;text-align:center}
+
+/* ---- radar and areas ---- */
+.radar{width:100%;max-width:300px;display:block;margin:4px auto 10px;overflow:visible}
+.ar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;
+  border-bottom:1px solid #f1ece1;font-size:14.5px}
+.ar:last-of-type{border-bottom:0}
+.gl{padding:9px 0;border-bottom:1px solid #f1ece1}
+.gl:last-child{border-bottom:0}
+.gl b{font-size:14.5px}
+
+/* ---- why bullets ---- */
+ul.why{margin:9px 0 0;padding-left:17px}
+ul.why li{font-size:14px;color:var(--soft);line-height:1.5;margin-bottom:5px}
+.bestbox{margin-top:11px;padding:12px;border-radius:11px;background:#f2f8f5;border:1px solid #cfe0d9}
+.bestbox p{margin-top:5px}
+
+/* ---- practice ---- */
+.tgt{position:absolute;width:30%;height:30%;border-radius:50%;background:rgba(31,111,92,.45);z-index:4}
+.tgt.cap{width:100%;height:100%;border-radius:0;background:none;
+  box-shadow:inset 0 0 0 4px rgba(31,111,92,.5)}
+.pracbtn{background:#f2f8f5;border-color:#cfe0d9;color:var(--good);font-weight:600}
 </style>
 </head>
 <body>
@@ -814,7 +845,8 @@ function buildRecord(pgn, myName) {
       mistakes.push({ ...base, k: "am", pc: "k", sq: p.allowedMate.to, at: p.allowedMate.from, l: 12, pun: ended });
     }
     if (p.hang && gKey !== prevG) {
-      mistakes.push({ ...base, k: "g", pc: p.hang.piece, sq: p.hang.sq, at: p.hang.attacker, l: p.hang.loss, pun: dropped >= 2 });
+      mistakes.push({ ...base, k: "g", pc: p.hang.piece, sq: p.hang.sq, at: p.hang.attacker,
+        l: p.hang.loss, pun: dropped >= 2, df: !!p.hang.defended });
     }
     if (p.missed && mKey !== prevM) {
       mistakes.push({ ...base, k: "m", pc: p.missed.piece, sq: p.missed.sq, at: p.missed.from, l: p.missed.gain, pun: false });
@@ -1388,6 +1420,284 @@ function narrative(agg, seedStr) {
 }
 
 const lower1 = (s) => s.charAt(0).toLowerCase() + s.slice(1);
+/* ============================================================
+   7. A SMALL SEARCH
+   Material only, alpha beta, with a capture-only extension so it
+   does not stop in the middle of a trade. It is not Stockfish and
+   it does not pretend to be: it finds material and mate, which is
+   what decides games below club level.
+   ============================================================ */
+
+const MATE = 30000;
+
+function orderMoves(state, moves) {
+  return moves.sort((a, b) => {
+    const va = VAL[(state.board[a.to] || ".").toLowerCase()] || 0;
+    const vb = VAL[(state.board[b.to] || ".").toLowerCase()] || 0;
+    return vb - va;
+  });
+}
+
+function qsearch(state, alpha, beta, d) {
+  const stand = material(state.board, state.turn);
+  if (d === 0) return stand;
+  if (stand >= beta) return beta;
+  if (stand > alpha) alpha = stand;
+  const caps = orderMoves(state, allLegalMoves(state).filter((m) => state.board[m.to] !== "."));
+  for (const m of caps) {
+    const sc = -qsearch(m.after, -beta, -alpha, d - 1);
+    if (sc >= beta) return beta;
+    if (sc > alpha) alpha = sc;
+  }
+  return alpha;
+}
+
+function negamax(state, depth, alpha, beta) {
+  const moves = allLegalMoves(state);
+  if (!moves.length) return inCheck(state, state.turn) ? -(MATE + depth) : 0;
+  if (depth === 0) return qsearch(state, alpha, beta, 4);
+  orderMoves(state, moves);
+  let best = -Infinity;
+  for (const m of moves) {
+    const sc = -negamax(m.after, depth - 1, -beta, -alpha);
+    if (sc > best) best = sc;
+    if (best > alpha) alpha = best;
+    if (alpha >= beta) break;
+  }
+  return best;
+}
+
+/* Best move for the side to move. Returns null in a finished position. */
+function bestMove(state, depth = 4) {
+  const moves = orderMoves(state, allLegalMoves(state));
+  if (!moves.length) return null;
+  let best = null, alpha = -Infinity;
+  for (const m of moves) {
+    const sc = -negamax(m.after, depth - 1, -Infinity, -alpha);
+    if (!best || sc > best.score) best = { ...m, score: sc };
+    if (sc > alpha) alpha = sc;
+  }
+  const now = material(state.board, state.turn);
+  return {
+    from: best.from, to: best.to, promo: best.promo,
+    score: best.score, gain: best.score - now,
+    mate: best.score > MATE - 100,
+    san: toSAN(state, best.from, best.to, best.promo),
+  };
+}
+
+/* How good was the move actually played, on the same scale. */
+function scoreMove(state, from, to, promo, depth = 4) {
+  const after = makeMove(state, from, to, promo);
+  return -negamax(after, depth - 1, -Infinity, Infinity);
+}
+
+/* ============================================================
+   8. WRITING MOVES DOWN
+   ============================================================ */
+
+function toSAN(state, from, to, promo) {
+  const p = state.board[from];
+  if (!p || p === ".") return "";
+  const t = p.toLowerCase();
+  if (t === "k" && Math.abs(fileOf(to) - fileOf(from)) === 2) {
+    return fileOf(to) === 6 ? "O-O" : "O-O-O";
+  }
+  const isCap = state.board[to] !== "." || (t === "p" && fileOf(from) !== fileOf(to));
+  let s = "";
+  if (t !== "p") {
+    s += p.toUpperCase();
+    const rivals = allLegalMoves(state).filter((m) =>
+      m.to === to && m.from !== from && state.board[m.from] === p);
+    if (rivals.length) {
+      const sameFile = rivals.some((m) => fileOf(m.from) === fileOf(from));
+      const sameRank = rivals.some((m) => rankOf(m.from) === rankOf(from));
+      if (!sameFile) s += "abcdefgh"[fileOf(from)];
+      else if (!sameRank) s += String(8 - rankOf(from));
+      else s += sqName(from);
+    }
+  } else if (isCap) s += "abcdefgh"[fileOf(from)];
+  if (isCap) s += "x";
+  s += sqName(to);
+  if (promo) s += "=" + promo;
+  const after = makeMove(state, from, to, promo);
+  if (inCheck(after, after.turn)) s += hasAnyLegalMove(after) ? "+" : "#";
+  return s;
+}
+
+/* Notation as a person would say it out loud. */
+function sanToWords(san) {
+  if (!san) return "";
+  if (/^(O-O-O|0-0-0)/.test(san)) return "castles queenside";
+  if (/^(O-O|0-0)/.test(san)) return "castles kingside";
+  const m = san.match(/^([KQRBN])?([a-h])?([1-8])?(x)?([a-h][1-8])(?:=([QRBN]))?([+#])?$/);
+  if (!m) return san;
+  const piece = m[1] ? NAMES[m[1].toLowerCase()] : "pawn";
+  const fromHint = m[2] || m[3] ? ` (the ${m[2] || ""}${m[3] || ""} one)` : "";
+  let out = `${piece}${fromHint} ${m[4] ? "takes on" : "to"} ${m[5]}`;
+  if (m[6]) out += `, promoting to a ${NAMES[m[6].toLowerCase()]}`;
+  if (m[7] === "+") out += ", check";
+  if (m[7] === "#") out += ", checkmate";
+  return out;
+}
+
+const moveWords = (from, to, piece) =>
+  `${NAMES[(piece || "p").toLowerCase()]} on ${sqName(from)} to ${sqName(to)}`;
+
+/* ============================================================
+   9. WHY IT HAPPENED
+   ============================================================ */
+
+function whyFor(m, plies) {
+  const bits = [];
+  const p = plies[m.p];
+  if (!p) return bits;
+  const board = p.board;
+  const attacker = board[m.at];
+  const theirLast = plies[m.p - 1];
+
+  if (m.k === "g") {
+    const piece = NAMES[(m.pc || "p").toLowerCase()];
+    const atkName = attacker && attacker !== "." ? NAMES[attacker.toLowerCase()] : "piece";
+    bits.push(`Their ${atkName} on ${sqName(m.at)} is what takes it.`);
+    if (theirLast && theirLast.to === m.at) {
+      bits.push(`That ${atkName} arrived on the move immediately before yours, so the attack was brand new when you moved.`);
+    } else if (theirLast) {
+      bits.push(`It was already there before your move, so the attack was on the board while you were deciding.`);
+    }
+    bits.push(m.df === false
+      ? `Nothing of yours was covering ${sqName(m.sq)}, so it was simply free.`
+      : `You had it defended, but their attacker was worth less than the piece it was taking.`);
+    if (m.ck) bits.push(`You were in check, so your choice of moves was narrow.`);
+    if (m.sp != null && m.sp <= 5) bits.push(`You played it in ${m.sp < 10 ? m.sp.toFixed(1) : Math.round(m.sp)} seconds.`);
+  } else if (m.k === "m") {
+    bits.push(`Your ${NAMES[(board[m.at] || "p").toLowerCase()]} on ${sqName(m.at)} could have taken it.`);
+    if (theirLast && theirLast.to === m.sq) bits.push(`They had just moved it there.`);
+  } else if (m.k === "mm") {
+    bits.push(`${moveWords(m.at, m.sq, board[m.at])} was mate on the spot.`);
+  } else if (m.k === "am") {
+    bits.push(`Their ${NAMES[(board[m.at] || "q").toLowerCase()]} reaches ${sqName(m.sq)} and your king has nowhere to go.`);
+  }
+  return bits;
+}
+
+/* ============================================================
+   10. SIX AREAS
+   Scored against the target for the player's own rating band,
+   not against other people. There is no public dataset of what
+   an average 900 does, so nothing here pretends there is.
+   ============================================================ */
+
+function areaScores(agg) {
+  const L = agg.level;
+  const clamp = (x) => Math.max(0, Math.min(100, Math.round(x)));
+  const inv = (v, target, bad) => clamp(100 - ((v - target) / Math.max(bad - target, 0.01)) * 55);
+
+  const openings = clamp(
+    (agg.castledShare * 45) + ((3 - Math.min(agg.homeAt12, 3)) / 3) * 35 +
+    (agg.pawnPushes <= 4 ? 20 : agg.pawnPushes <= 5 ? 12 : 4));
+  const tactics = clamp((inv(agg.givenPer, L.give[0], L.give[1]) + inv(agg.missedPer, L.miss[0], L.miss[1])) / 2);
+  const endgamePh = agg.byPhase.find((p) => p.phase === "Endgame") || { given: 0, missed: 0 };
+  const endgameRate = agg.n ? (endgamePh.given + endgamePh.missed) / agg.n : 0;
+  const endgame = clamp(inv(endgameRate, L.give[0], L.give[1] * 2));
+  const advantage = agg.wasWinning >= 2 && agg.convertRate !== null
+    ? clamp(agg.convertRate * 100) : null;
+  const resource = agg.wasLosing >= 2
+    ? clamp(30 + (agg.comebacks / agg.wasLosing) * 140) : null;
+  const timeScore = clamp(100 - agg.timeoutShare * 220
+    - (agg.mistakeSpendN ? (agg.rushed / agg.mistakeSpendN) * 40 : 0));
+
+  return [
+    { key: "openings", label: "Openings", v: openings,
+      note: `Castling, development and early pawn moves.` },
+    { key: "tactics", label: "Not dropping things", v: tactics,
+      note: `Pieces kept safe and free material taken.` },
+    { key: "endgame", label: "Endgame", v: endgame,
+      note: `How much goes wrong once the board thins out.` },
+    { key: "advantage", label: "Closing it out", v: advantage,
+      note: advantage === null ? `Not enough winning positions yet to judge.` : `Turning a material lead into the point.` },
+    { key: "resource", label: "Fighting back", v: resource,
+      note: resource === null ? `Not enough losing positions yet to judge.` : `Getting results from bad positions.` },
+    { key: "time", label: "Clock", v: timeScore,
+      note: `Time trouble and moves played too fast.` },
+  ];
+}
+
+/* ============================================================
+   11. PRACTICE
+   Every drill is a real position from one of their own games.
+   ============================================================ */
+
+function buildDrills(games, name, limit = 12, replayCache) {
+  const pool = [];
+  for (const g of games) {
+    for (const m of g.mis) {
+      if (m.k === "mm") pool.push({ g, m, kind: "mate", score: 100 });
+      else if (m.k === "m" && m.l >= 3) pool.push({ g, m, kind: "take", score: 50 + m.l });
+      else if (m.k === "g" && m.pun && m.l >= 3) pool.push({ g, m, kind: "save", score: 30 + m.l });
+    }
+  }
+  pool.sort((a, b) => b.score - a.score || b.g.d - a.g.d);
+  // mix the kinds up rather than serving twelve of whichever is most common
+  const out = [];
+  const seen = new Set();
+  const cap = { mate: Math.ceil(limit / 2), take: Math.ceil(limit * 0.45), save: Math.ceil(limit * 0.45) };
+  const used = { mate: 0, take: 0, save: 0 };
+  for (const c of pool) {
+    if (out.length >= limit) break;
+    if (used[c.kind] >= cap[c.kind] && out.length < limit - 2) continue;
+    const key = c.g.id + ":" + c.m.p;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    used[c.kind]++;
+    let rep = replayCache.get(c.g.id);
+    if (!rep) {
+      try { rep = replay(c.g.pgn, name); } catch { rep = null; }
+      if (!rep) continue;
+      replayCache.set(c.g.id, rep);
+    }
+    const plies = rep.plies;
+    const idx = c.m.p;
+    // the position the player was looking at, before their move
+    const before = idx > 0 ? plies[idx - 1].board : START;
+    const st = { board: before.split(""), turn: rep.color, castling: "KQkq", ep: null };
+    if (!allLegalMoves(st).length) continue;
+    out.push({
+      id: key, kind: c.kind, board: before, color: rep.color,
+      target: c.m.sq, hintFrom: c.m.at, played: c.m.s, moveNo: c.m.mv,
+      opening: c.g.o, date: c.g.d, gameId: c.g.id, ply: idx, points: c.m.l,
+    });
+  }
+  return out;
+}
+
+/* Judge an attempt. Returns {ok, why, best}. */
+function judgeDrill(d, from, to, promo) {
+  const st = { board: d.board.split(""), turn: d.color, castling: "KQkq", ep: null };
+  const legal = allLegalMoves(st).some((m) => m.from === from && m.to === to);
+  if (!legal) return { ok: false, why: "That is not a legal move here." };
+  const san = toSAN(st, from, to, promo);
+  const after = makeMove(st, from, to, promo);
+  if (d.kind === "mate") {
+    const ok = isCheckmate(after);
+    return { ok, san, why: ok ? "That is mate. Game over." : "Not mate. The king still has a way out or something can block." };
+  }
+  if (d.kind === "take") {
+    const ok = to === d.target;
+    return { ok, san, why: ok ? "That is the free one." : `Not that one. Look for a piece of theirs that nothing is defending.` };
+  }
+  // save: anything that does not lose the material is accepted
+  const best = bestMove(st, 3);
+  const got = -negamax(after, 2, -Infinity, Infinity);
+  const ok = best ? got >= best.score - 1 : true;
+  return { ok, san, why: ok ? "That holds it together." : "That still drops material. Something else keeps everything defended." };
+}
+
+function drillPrompt(d) {
+  if (d.kind === "mate") return "There is mate in one here. Find it.";
+  if (d.kind === "take") return "Something of theirs is free. Take it.";
+  return "Something of yours is about to be lost. Find a move that keeps it.";
+}
 </script>
 <script>
 /* ============================================================
@@ -1399,10 +1709,15 @@ const keyFor = (name) => "cc:u:" + name.trim().toLowerCase();
 const CAP = 600;
 
 const S = {
-  name: "", games: [], review: null, apiKey: "", synced: {},
+  name: "", games: [], review: null, apiKey: "", synced: {}, plain: false, seenIntro: false,
   tab: "today", view: null, ply: 0, ready: false, screen: "login", inspect: null,
-  toast: null, busy: "", shown: 25, showAll: false, pick: null, pending: "", why: false,
+  toast: null, busy: "", shown: 25, pick: null, pending: "", intro: 0,
+  showBest: false, best: null,
+  drills: null, di: 0, dFrom: null, dResult: null, dScore: { right: 0, done: 0 },
+  compare: null, compareName: "", glossary: false,
 };
+
+const replayCache = new Map();
 
 const store = {
   async get(k) {
@@ -1414,12 +1729,12 @@ const store = {
     try { localStorage.setItem(k, v); return true; } catch { return false; }
   },
 };
-
 const tick = () => new Promise((r) => setTimeout(r, 0));
 
 async function persist() {
   if (!S.name) return;
-  const payload = { name: S.name, games: S.games.slice(-CAP), review: S.review, apiKey: S.apiKey, synced: S.synced };
+  const payload = { name: S.name, games: S.games.slice(-CAP), review: S.review,
+    apiKey: S.apiKey, synced: S.synced, plain: S.plain, seenIntro: S.seenIntro };
   let body = JSON.stringify(payload);
   while (body.length > 4_000_000 && payload.games.length > 20) {
     payload.games = payload.games.slice(Math.ceil(payload.games.length * 0.2));
@@ -1432,20 +1747,21 @@ async function persist() {
 async function loadUser(name) {
   const raw = await store.get(keyFor(name));
   S.name = name.trim();
-  S.games = []; S.review = null; S.synced = {}; S.apiKey = "";
+  S.games = []; S.review = null; S.synced = {}; S.apiKey = ""; S.plain = false; S.seenIntro = false;
+  replayCache.clear();
   if (raw) {
     try {
       const d = JSON.parse(raw);
-      S.games = d.games || []; S.review = d.review || null;
-      S.apiKey = d.apiKey || ""; S.synced = d.synced || {};
+      S.games = d.games || []; S.review = d.review || null; S.apiKey = d.apiKey || "";
+      S.synced = d.synced || {}; S.plain = !!d.plain; S.seenIntro = !!d.seenIntro;
       if (d.name) S.name = d.name;
     } catch {}
   }
-  S.screen = "app"; S.tab = "today"; S.view = null; S.shown = 25;
+  S.screen = S.seenIntro || S.games.length ? "app" : "intro";
+  S.intro = 0; S.tab = "today"; S.view = null; S.shown = 25; S.drills = null;
   await store.set(LAST, S.name);
 }
 
-/* rebuild old saved games when the analysis gets deeper */
 async function upgradeSaved() {
   const stale = S.games.filter((g) => (g.v || 1) < REC_VERSION && g.pgn);
   if (!stale.length) return;
@@ -1457,13 +1773,9 @@ async function upgradeSaved() {
       try { r = buildRecord(g.pgn, S.name); } catch {}
       out.push(r || g);
     } else out.push(g);
-    if (i % 5 === 0) {
-      S.busy = `Taking another look at your saved games, ${i} of ${S.games.length}`;
-      render(); await tick();
-    }
+    if (i % 5 === 0) { S.busy = `Taking another look at your games, ${i} of ${S.games.length}`; render(); await tick(); }
   }
-  S.games = out; S.busy = "";
-  await persist();
+  S.games = out; S.busy = ""; await persist();
 }
 
 /* ---------- helpers ---------- */
@@ -1471,35 +1783,20 @@ const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const fmtS = (s) => (s == null ? "-" : s < 10 ? `${s.toFixed(1)}s` : `${Math.round(s)}s`);
 const pct = (x) => Math.round(x * 100) + "%";
-const KINDNAME = { g: "piece left hanging", m: "free material left", mm: "mate was there", am: "mate allowed" };
+const KINDNAME = { g: "piece lost", m: "free material", mm: "mate was there", am: "mate allowed" };
+/* every move on screen goes through here, so beginner mode changes all of it at once */
+const mv = (san) => (S.plain ? sanToWords(san) : san);
 
 function describe(m) {
   const piece = NAMES[(m.pc || "p").toLowerCase()];
-  if (m.k === "mm") return `Mate was on the board here. ${sqName(m.at)} to ${sqName(m.sq)} would have ended it, and the game carried on instead.`;
-  if (m.k === "am") return `After this move they had mate with ${sqName(m.at)} to ${sqName(m.sq)}.${m.pun ? " They found it." : " They did not see it, so the game went on."}`;
+  if (m.k === "mm") return `Mate was on the board. ${moveWords(m.at, m.sq, "q")} finished it, and the game carried on instead.`;
+  if (m.k === "am") return `After this, they had mate with ${moveWords(m.at, m.sq)}.${m.pun ? " They played it." : " They did not see it."}`;
   if (m.k === "g") {
     return m.pun
-      ? `Your ${piece} on ${sqName(m.sq)} could be taken here, and it was.`
-      : `Your ${piece} on ${sqName(m.sq)} could have been taken here. It was not, so this one cost nothing, but the position allowed it.`;
+      ? `Your ${piece} on ${sqName(m.sq)} could be taken, and it was.`
+      : `Your ${piece} on ${sqName(m.sq)} could have been taken. It was not, so it cost nothing this time.`;
   }
-  return `Their ${piece} on ${sqName(m.sq)} was there for the taking, worth ${m.l} points.`;
-}
-
-/* ---------- pieces, drawn rather than typed ---------- */
-const PIECE_PATHS = {
-  p: `<circle cx="22.5" cy="13.5" r="6.2"/><path d="M17.2,20.5c0,3.8-4.2,5.8-4.2,10.5h19c0-4.7-4.2-6.7-4.2-10.5z"/><path d="M11,31h23l2.4,7.4h-27.8z"/>`,
-  r: `<path d="M11,9h5v3h4v-3h5v3h4v-3h5v7h-23z"/><path d="M14.5,16h16v13h-16z"/><path d="M11,29h23l2.4,9.4h-27.8z"/>`,
-  n: `<path d="M13.5,38.4v-6.6c0-5.2,3.2-8.4,7.4-10.5c1.6-0.8,1.9-2.4,1-3.6l-3.6,2.3c-2,1.2-3.6-0.7-2.6-2.8l5.6-8.2c2-2.9,6-3.7,9-1.6c3.1,2.2,4.2,6.3,4.2,11.4v19.6z"/><circle cx="27.5" cy="14.6" r="1.5" class="eye"/>`,
-  b: `<circle cx="22.5" cy="7.2" r="2.4"/><path d="M22.5,10c3.7,0,6.2,3.3,6.2,7.2c0,4.2-3.4,5.9-3.4,9.3h-5.6c0-3.4-3.4-5.1-3.4-9.3c0-3.9,2.5-7.2,6.2-7.2z"/><path d="M17.6,27.5h9.8l1,3.6h-11.8z"/><path d="M12.5,31h20l2.4,7.4h-24.8z"/>`,
-  q: `<circle cx="8.6" cy="13" r="2.4"/><circle cx="15.6" cy="9.6" r="2.4"/><circle cx="22.5" cy="8.4" r="2.6"/><circle cx="29.4" cy="9.6" r="2.4"/><circle cx="36.4" cy="13" r="2.4"/><path d="M9.4,15.4l3,11.6h20.2l3-11.6l-5.4,7.4l-2.4-10.4l-5.3,10l-5.3-10l-2.4,10.4z"/><path d="M12.4,27.5h20.2l1,3.6h-22.2z"/><path d="M10.4,31.4h24.2l2.2,7h-28.6z"/>`,
-  k: `<path d="M21.2,4.6h2.6v3.2h3.2v2.6h-3.2v3.4h-2.6v-3.4h-3.2v-2.6h3.2z"/><path d="M22.5,14.4c-6.6,0-11.5,4.2-11.5,9.4v3.7h23v-3.7c0-5.2-4.9-9.4-11.5-9.4z"/><path d="M11,27.5h23l1,3.6h-25z"/><path d="M10,31.4h25l2.2,7h-29.4z"/>`,
-};
-
-function pieceSVG(ch) {
-  const white = ch === ch.toUpperCase();
-  const t = ch.toLowerCase();
-  return `<svg class="pc ${white ? "w" : "b"}" viewBox="0 0 45 45" aria-hidden="true">
-    <g>${PIECE_PATHS[t]}</g></svg>`;
+  return `Their ${piece} on ${sqName(m.sq)} was free, worth ${m.l} points.`;
 }
 
 /* ---------- charts ---------- */
@@ -1521,6 +1818,37 @@ function lineChart(vals, labels, color, opts = {}) {
     <span>${esc(labels[labels.length - 1])}</span></div>`;
 }
 
+function radar(areas, other) {
+  const R = 78, C = 100;
+  const pts = (vals) => vals.map((v, i) => {
+    const a = (Math.PI * 2 * i) / vals.length - Math.PI / 2;
+    const r = (Math.max(v == null ? 0 : v, 4) / 100) * R;
+    return `${(C + Math.cos(a) * r).toFixed(1)},${(C + Math.sin(a) * r).toFixed(1)}`;
+  }).join(" ");
+  const grid = [25, 50, 75, 100].map((p) =>
+    `<polygon points="${pts(areas.map(() => p))}" fill="none" stroke="#e6dfd1" stroke-width="1"/>`).join("");
+  const labels = areas.map((a, i) => {
+    const ang = (Math.PI * 2 * i) / areas.length - Math.PI / 2;
+    const x = C + Math.cos(ang) * (R + 16), y = C + Math.sin(ang) * (R + 15);
+    const anchor = Math.abs(Math.cos(ang)) < 0.3 ? "middle" : Math.cos(ang) > 0 ? "start" : "end";
+    return `<text x="${x.toFixed(0)}" y="${y.toFixed(0)}" text-anchor="${anchor}"
+      font-size="9" fill="#736b5e">${esc(a.label)}</text>`;
+  }).join("");
+  const mine = `<polygon points="${pts(areas.map((a) => a.v))}" fill="#1f6f5c" fill-opacity=".22"
+    stroke="#1f6f5c" stroke-width="2" stroke-linejoin="round"/>`;
+  const theirs = other
+    ? `<polygon points="${pts(other.map((a) => a.v))}" fill="none" stroke="#b47617"
+        stroke-width="2" stroke-dasharray="4 3" stroke-linejoin="round"/>` : "";
+  return `<svg viewBox="0 0 200 200" class="radar">${grid}${theirs}${mine}${labels}</svg>`;
+}
+
+function hBars(entries, color) {
+  const max = Math.max(...entries.map((e) => e[1]), 1);
+  return entries.map(([k, v]) => `<div class="hb"><span class="hbl">${esc(k)}</span>
+    <span class="hbt"><i style="width:${(v / max) * 100}%;background:${color}"></i></span>
+    <span class="hbv mono">${v}</span></div>`).join("");
+}
+
 function groupBars(rows, keys, colors, names) {
   const max = Math.max(1, ...rows.flatMap((r) => keys.map((k) => r[k])));
   return `<div class="gb">${rows.map((r) => `<div class="gbcol"><div class="gbbars">
@@ -1529,13 +1857,6 @@ function groupBars(rows, keys, colors, names) {
     </div><div class="gblab">${esc(r.phase)}</div></div>`).join("")}</div>
   <div class="legend">${keys.map((k, ki) =>
     `<span><i style="background:${colors[ki]}"></i>${esc(names[ki])}</span>`).join("")}</div>`;
-}
-
-function hBars(entries, color) {
-  const max = Math.max(...entries.map((e) => e[1]), 1);
-  return entries.map(([k, v]) => `<div class="hb"><span class="hbl">${esc(k)}</span>
-    <span class="hbt"><i style="width:${(v / max) * 100}%;background:${color}"></i></span>
-    <span class="hbv mono">${v}</span></div>`).join("");
 }
 
 function strip(matIn, marks) {
@@ -1554,33 +1875,38 @@ function strip(matIn, marks) {
       vector-effect="non-scaling-stroke"/>${bars}${ticks}</svg>`;
 }
 
-/* ---------- board ---------- */
-function boardHTML(boardStr, flip, mark, inspect) {
+/* ---------- pieces and board ---------- */
+const PIECE_PATHS = {
+  p: `<circle cx="22.5" cy="13.5" r="6.2"/><path d="M17.2,20.5c0,3.8-4.2,5.8-4.2,10.5h19c0-4.7-4.2-6.7-4.2-10.5z"/><path d="M11,31h23l2.4,7.4h-27.8z"/>`,
+  r: `<path d="M11,9h5v3h4v-3h5v3h4v-3h5v7h-23z"/><path d="M14.5,16h16v13h-16z"/><path d="M11,29h23l2.4,9.4h-27.8z"/>`,
+  n: `<path d="M13.5,38.4v-6.6c0-5.2,3.2-8.4,7.4-10.5c1.6-0.8,1.9-2.4,1-3.6l-3.6,2.3c-2,1.2-3.6-0.7-2.6-2.8l5.6-8.2c2-2.9,6-3.7,9-1.6c3.1,2.2,4.2,6.3,4.2,11.4v19.6z"/><circle cx="27.5" cy="14.6" r="1.5" class="eye"/>`,
+  b: `<circle cx="22.5" cy="7.2" r="2.4"/><path d="M22.5,10c3.7,0,6.2,3.3,6.2,7.2c0,4.2-3.4,5.9-3.4,9.3h-5.6c0-3.4-3.4-5.1-3.4-9.3c0-3.9,2.5-7.2,6.2-7.2z"/><path d="M17.6,27.5h9.8l1,3.6h-11.8z"/><path d="M12.5,31h20l2.4,7.4h-24.8z"/>`,
+  q: `<circle cx="8.6" cy="13" r="2.4"/><circle cx="15.6" cy="9.6" r="2.4"/><circle cx="22.5" cy="8.4" r="2.6"/><circle cx="29.4" cy="9.6" r="2.4"/><circle cx="36.4" cy="13" r="2.4"/><path d="M9.4,15.4l3,11.6h20.2l3-11.6l-5.4,7.4l-2.4-10.4l-5.3,10l-5.3-10l-2.4,10.4z"/><path d="M12.4,27.5h20.2l1,3.6h-22.2z"/><path d="M10.4,31.4h24.2l2.2,7h-28.6z"/>`,
+  k: `<path d="M21.2,4.6h2.6v3.2h3.2v2.6h-3.2v3.4h-2.6v-3.4h-3.2v-2.6h3.2z"/><path d="M22.5,14.4c-6.6,0-11.5,4.2-11.5,9.4v3.7h23v-3.7c0-5.2-4.9-9.4-11.5-9.4z"/><path d="M11,27.5h23l1,3.6h-25z"/><path d="M10,31.4h25l2.2,7h-29.4z"/>`,
+};
+const pieceSVG = (ch) => `<svg class="pc ${ch === ch.toUpperCase() ? "w" : "b"}" viewBox="0 0 45 45"
+  aria-hidden="true"><g>${PIECE_PATHS[ch.toLowerCase()]}</g></svg>`;
+
+function boardHTML(boardStr, flip, mark, opts = {}) {
   const order = flip ? [...Array(64).keys()].reverse() : [...Array(64).keys()];
-  let am = null;
-  if (inspect != null) am = attackMap(boardStr.split(""));
+  const am = opts.inspect != null ? attackMap(boardStr.split("")) : null;
+  const targets = opts.targets || [];
   const cells = order.map((i) => {
     const p = boardStr[i];
     const dark = (fileOf(i) + rankOf(i)) % 2 === 1;
     const bits = [];
     if (mark && (mark.from === i || mark.to === i)) bits.push('<i class="last"></i>');
-    if (inspect === i) bits.push('<i class="sel"></i>');
+    if (opts.inspect === i || opts.from === i) bits.push('<i class="sel"></i>');
     if (p !== ".") bits.push(pieceSVG(p));
     if (mark && mark.target === i) bits.push(`<i class="ring ${mark.tone || ""}"></i>`);
-    if (am && inspect !== i) {
-      const attacksSel = am.w[inspect].includes(i) || am.b[inspect].includes(i);
-      if (attacksSel) {
-        const white = isW(p);
-        bits.push(`<i class="dot ${white ? "dw" : "db"}"></i>`);
-      }
+    if (am && opts.inspect !== i && (am.w[opts.inspect].includes(i) || am.b[opts.inspect].includes(i))) {
+      bits.push(`<i class="dot ${isW(p) ? "dw" : "db"}"></i>`);
     }
-    // edge labels, inside the squares to keep the board as wide as possible
+    if (targets.includes(i)) bits.push(`<i class="tgt ${p !== "." ? "cap" : ""}"></i>`);
     const f = fileOf(i), r = rankOf(i);
-    const showFile = flip ? r === 0 : r === 7;
-    const showRank = flip ? f === 7 : f === 0;
-    if (showRank) bits.push(`<span class="cr rk">${8 - r}</span>`);
-    if (showFile) bits.push(`<span class="cr fl">${"abcdefgh"[f]}</span>`);
-    return `<div class="sq ${dark ? "d" : "l"}" data-a="sq" data-i="${i}">${bits.join("")}</div>`;
+    if (flip ? f === 7 : f === 0) bits.push(`<span class="cr rk">${8 - r}</span>`);
+    if (flip ? r === 0 : r === 7) bits.push(`<span class="cr fl">${"abcdefgh"[f]}</span>`);
+    return `<div class="sq ${dark ? "d" : "l"}" data-a="${opts.tap || "sq"}" data-i="${i}">${bits.join("")}</div>`;
   }).join("");
 
   let arrow = "";
@@ -1592,76 +1918,55 @@ function boardHTML(boardStr, flip, mark, inspect) {
     const dx = x2 - x1, dy = y2 - y1, len = Math.hypot(dx, dy) || 1;
     const ex = x2 - (dx / len) * 0.36, ey = y2 - (dy / len) * 0.36;
     const col = mark.tone === "green" ? "#1f6f5c" : mark.tone === "purple" ? "#6b3fa0" : "#b0392b";
-    arrow = `<svg class="arrows" viewBox="0 0 8 8">
-      <defs><marker id="ah" markerWidth="3.4" markerHeight="3.4" refX="1.9" refY="1.7" orient="auto">
-        <path d="M0,0 L0,3.4 L3.1,1.7 z" fill="${col}"/></marker></defs>
+    arrow = `<svg class="arrows" viewBox="0 0 8 8"><defs>
+      <marker id="ah" markerWidth="3.4" markerHeight="3.4" refX="1.9" refY="1.7" orient="auto">
+      <path d="M0,0 L0,3.4 L3.1,1.7 z" fill="${col}"/></marker></defs>
       <line x1="${x1}" y1="${y1}" x2="${ex}" y2="${ey}" stroke="${col}" stroke-width=".17"
         stroke-linecap="round" opacity=".9" marker-end="url(#ah)"/></svg>`;
   }
   return `<div class="board">${cells}${arrow}</div>`;
 }
 
-function inspectNote(boardStr, i, myColor) {
-  if (i == null) return `<div class="tiny mid">Tap any square to see what is aiming at it.</div>`;
-  const am = attackMap(boardStr.split(""));
-  const mine = am[myColor][i].length;
-  const theirs = am[myColor === "w" ? "b" : "w"][i].length;
-  const p = boardStr[i];
-  const who = p === "." ? "Empty square" :
-    `${colorOf(p) === myColor ? "Your" : "Their"} ${NAMES[p.toLowerCase()]}`;
-  return `<div class="inspect">
-    <b>${sqName(i)}</b> ${who}. Yours aiming at it: ${mine}. Theirs: ${theirs}.
-    ${p !== "." && colorOf(p) === myColor && theirs > mine ? " More of theirs than yours, so it is worth checking." : ""}
-    <button class="lnk" data-a="clearsq">clear</button>
-  </div>`;
-}
-
 function matBar(mat) {
   const v = Math.max(-12, Math.min(12, mat));
   return `<div class="matbar"><div class="mattrack"><b></b><i style="left:${((v + 12) / 24) * 100}%"></i></div>
-    <div class="matlab"><span>them</span>
-      <span class="mono ${v > 0 ? "good" : v < 0 ? "bad" : "faint"}">
-        ${v === 0 ? "material level" : v > 0 ? `you are ${v} up` : `you are ${-v} down`}</span>
-      <span>you</span></div></div>`;
+    <div class="matlab"><span>them</span><span class="mono ${v > 0 ? "good" : v < 0 ? "bad" : "faint"}">
+      ${v === 0 ? "material level" : v > 0 ? `you are ${v} up` : `you are ${-v} down`}</span><span>you</span></div></div>`;
 }
 
-/* ---------- chess.com sync ---------- */
-async function syncChessCom(howMany) {
-  const u = S.name.trim().toLowerCase();
+/* ---------- sync and import ---------- */
+async function fetchGamesFor(user, months) {
+  const r = await fetch(`https://api.chess.com/pub/player/${encodeURIComponent(user.toLowerCase())}/games/archives`);
+  if (r.status === 404) throw new Error(`No chess.com account called ${user}`);
+  if (!r.ok) throw new Error(`chess.com replied ${r.status}`);
+  const archives = (await r.json()).archives || [];
+  if (!archives.length) throw new Error("That account has no finished games");
+  let text = "";
+  const wanted = archives.slice(-months);
+  for (let i = 0; i < wanted.length; i++) {
+    S.busy = `Downloading month ${i + 1} of ${wanted.length}`; render();
+    const rr = await fetch(wanted[i] + "/pgn");
+    if (rr.ok) { text += (await rr.text()) + "\n\n"; S.synced[wanted[i].slice(-7)] = Date.now(); }
+  }
+  if (!text.trim()) throw new Error("blocked");
+  return text;
+}
+
+async function syncChessCom(months) {
   S.busy = "Asking chess.com for your games"; render();
-  let archives;
   try {
-    const r = await fetch(`https://api.chess.com/pub/player/${encodeURIComponent(u)}/games/archives`);
-    if (r.status === 404) throw new Error(`No chess.com account called ${S.name}`);
-    if (!r.ok) throw new Error(`chess.com replied ${r.status}`);
-    archives = (await r.json()).archives || [];
+    const text = await fetchGamesFor(S.name, months);
+    await importText(text);
+    return true;
   } catch (e) {
     S.busy = "";
     S.toast = /No chess\.com/.test(e.message) ? e.message
-      : "chess.com would not hand the games over from here. The file route works, one tap.";
+      : "chess.com would not hand them over from here. Use Add games, it takes one tap.";
     render(); setTimeout(() => { S.toast = null; render(); }, 6000);
     return false;
   }
-  if (!archives.length) { S.busy = ""; S.toast = "No finished games on that account yet."; render(); return false; }
-  const wanted = archives.slice(-howMany);
-  let text = "";
-  for (let i = 0; i < wanted.length; i++) {
-    S.busy = `Downloading month ${i + 1} of ${wanted.length}`; render();
-    try {
-      const r = await fetch(wanted[i] + "/pgn");
-      if (r.ok) { text += (await r.text()) + "\n\n"; S.synced[wanted[i].slice(-7)] = Date.now(); }
-    } catch {}
-  }
-  if (!text.trim()) {
-    S.busy = ""; S.toast = "chess.com blocked the download. Use Add games instead.";
-    render(); setTimeout(() => { S.toast = null; render(); }, 6000);
-    return false;
-  }
-  await importText(text);
-  return true;
 }
 
-/* ---------- import ---------- */
 async function importText(raw, forcedName) {
   S.busy = "Reading the file"; render(); await tick();
   const chunks = splitPGN(raw);
@@ -1684,9 +1989,7 @@ async function importText(raw, forcedName) {
   }
   const fresh = [];
   for (let i = 0; i < mine.length; i++) {
-    if (i % 4 === 0) {
-      S.busy = `Going through your games, ${i} of ${mine.length}`; render(); await tick();
-    }
+    if (i % 4 === 0) { S.busy = `Going through your games, ${i} of ${mine.length}`; render(); await tick(); }
     let rec = null;
     try { rec = buildRecord(mine[i], who); } catch {}
     if (!rec) { bad++; continue; }
@@ -1694,10 +1997,9 @@ async function importText(raw, forcedName) {
     have.add(rec.id); fresh.push(rec);
   }
   S.games = [...S.games, ...fresh].sort((a, b) => a.d - b.d).slice(-CAP);
-  S.pick = null; S.pending = ""; S.busy = "";
-  S.toast = fresh.length
-    ? `${fresh.length} new game${fresh.length > 1 ? "s" : ""} in`
-    : chunks.length ? `Nothing new there. ${dupes} were already saved${notMine ? `, ${notMine} were not yours` : ""}${bad ? `, ${bad} could not be read` : ""}`
+  S.pick = null; S.pending = ""; S.busy = ""; S.drills = null;
+  S.toast = fresh.length ? `${fresh.length} new game${fresh.length > 1 ? "s" : ""} in`
+    : chunks.length ? `Nothing new. ${dupes} already saved${notMine ? `, ${notMine} not yours` : ""}${bad ? `, ${bad} unreadable` : ""}`
       : "No games found in that file";
   await persist(); render();
   setTimeout(() => { if (S.toast) { S.toast = null; render(); } }, 5000);
@@ -1711,7 +2013,7 @@ function screenLogin() {
     <div class="mark">${pieceSVG("n")}</div>
     <h1 class="big">Chess post mortem</h1>
     <p class="lead-p">Your own games, read back to you in plain English. What went well, what slipped,
-    and what is worth a bit of practice next.</p>
+    and something to practise from your own positions.</p>
     <label class="lbl" for="user">chess.com username</label>
     <input id="user" placeholder="username" autocapitalize="none" autocorrect="off" spellcheck="false"
       autocomplete="username" enterkeyhint="go">
@@ -1721,125 +2023,225 @@ function screenLogin() {
   </div>`;
 }
 
+const INTRO = [
+  { t: "This is not a chess engine", b: `It does not tell you the computer's best move for every position, because that is where most analysis loses people. It counts what is actually on the board: pieces that could simply be taken, free material sitting there, and mate in one. Below club level that is what decides games.` },
+  { t: "It reads your real games", b: `Pull them from chess.com or drop in a PGN file. Everything is worked out on your phone and stays there. Nothing is uploaded anywhere, because there is no server to upload it to.` },
+  { t: "Then you practise the positions", b: `The moments it finds turn into drills. Same board, same position, your turn again. That is the part that actually changes anything.` },
+  { t: "Nothing here is jargon by default", b: `Openings get explained in plain words, and there is a beginner mode that writes moves out as sentences instead of code like Nf3. You can turn that on now or later in the You tab.` },
+];
+
+function screenIntro() {
+  const i = Math.min(S.intro, INTRO.length - 1);
+  const c = INTRO[i];
+  return `<div class="intro">
+    <div class="dots">${INTRO.map((_, k) => `<i class="${k === i ? "on" : ""}"></i>`).join("")}</div>
+    <div class="introcard">
+      <div class="introt">${esc(c.t)}</div>
+      <p>${esc(c.b)}</p>
+    </div>
+    <div class="row" style="gap:8px">
+      ${i > 0 ? `<button class="btn" data-a="introback">Back</button>` : ""}
+      <button class="btn pri" style="flex:1" data-a="intronext">
+        ${i === INTRO.length - 1 ? "Get my games" : "Next"}</button>
+    </div>
+    <button class="lnk" data-a="introskip">Skip</button>
+  </div>`;
+}
+
 function screenToday(agg) {
   const nar = narrative(agg, S.name);
-  const L = agg.level;
   return `
   <div class="card lead">
-    <div class="tiny nm" style="color:#3f4b46">${agg.n} games · ${esc(L.label)}${agg.rating ? ` · around ${agg.rating}` : ""}</div>
+    <div class="tiny nm" style="color:#3f4b46">${agg.n} games · ${esc(agg.level.label)}${agg.rating ? ` · around ${agg.rating}` : ""}</div>
     <p class="lead-p">${esc(nar.opener)}</p>
   </div>
 
   <h2>What is working</h2>
-  ${nar.strengths.map((s) => `<div class="card good-card">
-    <div class="t nm">${esc(s.label)}</div><p>${esc(s.detail)}</p></div>`).join("")}
+  ${nar.strengths.map((s) => `<div class="card good-card"><div class="t nm">${esc(s.label)}</div>
+    <p>${esc(s.detail)}</p></div>`).join("")}
 
   <h2>Worth a bit of work</h2>
-  ${nar.focus.map((f, i) => `<div class="card tip">
-    <div class="tipn">${i + 1}</div>
-    <div class="t nm">${esc(f.title)}</div>
-    <p>${esc(f.body)}</p></div>`).join("")}
+  ${nar.focus.map((f, i) => `<div class="card tip"><div class="tipn">${i + 1}</div>
+    <div class="t nm">${esc(f.title)}</div><p>${esc(f.body)}</p></div>`).join("")}
+  <button class="card list mid pracbtn" data-a="tab" data-t="practice">Practise these positions</button>
   <div class="tiny pad">${esc(nar.footnote)}</div>
 
   <h2>The numbers behind that</h2>
   ${metrics(agg).map((m) => `<div class="card">
-    <div class="between">
-      <div><div class="num ${m.level}">${esc(m.value)}</div><div class="tiny">${esc(m.unit)}</div></div>
+    <div class="between"><div><div class="num ${m.level}">${esc(m.value)}</div>
+      <div class="tiny">${esc(m.unit)}</div></div>
       <span class="chip ${m.level === "fix" ? "bad" : m.level}">${
-        m.level === "fix" ? "room here" : m.level === "watch" ? "middling" : "good"}</span>
-    </div>
+        m.level === "fix" ? "room here" : m.level === "watch" ? "middling" : "good"}</span></div>
     <div class="t">${esc(m.title)}</div><p>${esc(m.plain)}</p>
     <div class="tiny">${esc(m.target)}</div></div>`).join("")}
-  <div class="tiny pad">Those marks shift with your rating, so they move as you do.</div>
 
   <h2>Moments worth replaying</h2>
   ${agg.worst.slice(0, 10).map((m) => `
     <button class="card list" data-a="open" data-id="${esc(m.g.id)}" data-ply="${m.p}">
-      <div class="between">
-        <span class="mono acc">move ${m.mv}, ${esc(m.s)}</span>
-        <span class="chip ${m.k === "mm" || m.k === "am" ? "purple" : m.k === "m" ? "watch" : "bad"}">${esc(KINDNAME[m.k])}</span>
-      </div>
+      <div class="between"><span class="mono acc">move ${m.mv}, ${esc(mv(m.s))}</span>
+        <span class="chip ${m.k === "mm" || m.k === "am" ? "purple" : m.k === "m" ? "watch" : "bad"}">${esc(KINDNAME[m.k])}</span></div>
       <p>${describe(m)}</p>
-      <div class="tiny">${new Date(m.g.d).toLocaleDateString()} · ${esc(m.g.cls)} · vs ${esc(m.g.opp)}${
-        m.sp != null ? ` · ${fmtS(m.sp)} on the move` : ""}${m.at_ !== undefined ? ` · you were ${m.at_ === 0 ? "level" : m.at_ > 0 ? m.at_ + " up" : -m.at_ + " down"} at the time` : ""}</div>
-    </button>`).join("")}
+      <div class="tiny">${new Date(m.g.d).toLocaleDateString()} · vs ${esc(m.g.opp)}${
+        m.sp != null ? ` · ${fmtS(m.sp)} on the move` : ""}</div></button>`).join("")}
 
+  <button class="card list mid" data-a="tab" data-t="review">Read the long version</button>
   <div class="foot">Signed in as <b>${esc(S.name)}</b>. <button class="lnk" data-a="signout">Switch user</button></div>`;
 }
 
+/* ---------- practice ---------- */
+function screenPractice() {
+  if (!S.drills) {
+    return `<div class="card"><div class="t nm">Practice</div>
+      <p>Every drill here is a real position from one of your own games, at the moment something
+      slipped. Same board, your turn again.</p>
+      <button class="btn pri wide" data-a="makedrills">Build my drills</button></div>`;
+  }
+  if (!S.drills.length) {
+    return `<div class="card"><div class="t nm">Nothing to drill yet</div>
+      <p>Drills come from moments in your games where material was free, mate was available, or a
+      piece was lost. Add a few more games and they will show up.</p></div>`;
+  }
+  const d = S.drills[Math.min(S.di, S.drills.length - 1)];
+  const st = { board: d.board.split(""), turn: d.color, castling: "KQkq", ep: null };
+  const targets = S.dFrom != null
+    ? allLegalMoves(st).filter((m) => m.from === S.dFrom).map((m) => m.to) : [];
+  const r = S.dResult;
+  const mark = r && r.reveal ? { arrow: [r.reveal.from, r.reveal.to], target: r.reveal.to, tone: "green" } : null;
+  return `
+  <div class="between">
+    <div><div class="t nm">${esc(drillPrompt(d))}</div>
+      <div class="tiny nm">You are ${d.color === "w" ? "white" : "black"}, from your game on
+      ${new Date(d.date).toLocaleDateString()}, move ${d.moveNo}.</div></div>
+    <span class="chip good">${S.dScore.right}/${S.dScore.done}</span>
+  </div>
+  ${boardHTML(d.board, d.color === "b", mark, { from: S.dFrom, targets, tap: "dsq" })}
+  ${r ? `<div class="card ${r.ok ? "good-card" : "flagcard"}">
+      <div class="t nm">${r.ok ? "Right" : "Not that one"}</div>
+      <p>${esc(r.why)}${r.san ? ` You played ${esc(mv(r.san))}.` : ""}</p>
+      ${r.reveal ? `<p>The move was ${esc(mv(r.reveal.san))}.</p>` : ""}
+      <div class="row" style="gap:8px;margin-top:10px">
+        ${!r.ok && !r.reveal ? `<button class="btn" data-a="dreveal">Show me</button>` : ""}
+        <button class="btn pri" style="flex:1" data-a="dnext">
+          ${S.di >= S.drills.length - 1 ? "Finish" : "Next position"}</button>
+      </div></div>`
+    : `<div class="tiny mid">Tap the piece you want to move, then where it goes.
+       ${S.dFrom != null ? `<button class="lnk" data-a="dclear">start again</button>` : ""}</div>
+       <button class="card list mid" data-a="dskip">Skip this one</button>`}
+  <div class="tiny pad">Position ${Math.min(S.di + 1, S.drills.length)} of ${S.drills.length}.
+    <button class="lnk" data-a="open" data-id="${esc(d.gameId)}" data-ply="${d.ply}">See it in the game</button></div>`;
+}
+
+/* ---------- you ---------- */
 function screenYou(agg) {
   const sp = styleProfile(agg);
-  const str = strengths(agg);
+  const areas = areaScores(agg);
+  const other = S.compare ? areaScores(S.compare.agg) : null;
   return `
+  <h2>Six areas</h2>
+  <div class="card">
+    ${radar(areas, other)}
+    ${S.compare ? `<div class="legend"><span><i style="background:#1f6f5c"></i>you</span>
+      <span><i style="background:#b47617"></i>${esc(S.compare.label)}</span></div>` : ""}
+    ${areas.map((a) => `<div class="ar">
+      <div><div>${esc(a.label)}</div><div class="tiny nm">${esc(a.note)}</div></div>
+      <span class="mono ${a.v == null ? "faint" : a.v >= 65 ? "good" : a.v >= 40 ? "watch" : "bad"}">
+        ${a.v == null ? "-" : a.v}</span></div>`).join("")}
+    <div class="tiny">Scored against the target for your own rating, not against other players.
+    There is no public data on what an average player at your level does, so nothing here pretends
+    otherwise.</div>
+  </div>
+
+  <h2>Compare</h2>
+  <div class="card">
+    <p class="nm">Put someone else's six areas over yours, or your own older games against your recent ones.</p>
+    <input id="cmp" placeholder="chess.com username" autocapitalize="none" autocorrect="off" spellcheck="false" value="${esc(S.compareName)}">
+    <div class="row" style="gap:8px;margin-top:9px">
+      <button class="btn pri" style="flex:1" data-a="cmpuser" ${S.busy ? "disabled" : ""}>Compare</button>
+      <button class="btn" data-a="cmpself" ${S.games.length < 8 ? "disabled" : ""}>My older games</button>
+      ${S.compare ? `<button class="btn" data-a="cmpclear">Clear</button>` : ""}
+    </div>
+    ${S.compare ? `<div class="tiny">Showing ${esc(S.compare.label)}, ${S.compare.agg.n} games${
+      S.compare.agg.rating ? `, around ${S.compare.agg.rating}` : ""}.</div>` : ""}
+  </div>
+
   <h2>How you play</h2>
   <div class="card">
-    <div class="tiny nm">Closest match in habits</div>
     <div class="styleline"><div class="stylename">${esc(sp.best.name)}</div>
       <span class="chip good">${esc(sp.best.tag)}</span></div>
     <p>${esc(sp.best.blurb)}</p>
-    <div class="tiny">This is about taste, not strength. It compares how you tend to play, not how
-    well. Second closest is ${esc(sp.second.name)}.</div>
+    <div class="tiny">Taste, not strength. Second closest is ${esc(sp.second.name)}.</div>
   </div>
   <div class="card">
     ${sp.axes.map((a) => `<div class="ax">
       <div class="axlab"><span>${esc(a.left)}</span><span>${esc(a.right)}</span></div>
       <div class="axtrack"><i style="left:${Math.round(a.val * 100)}%"></i></div>
-      <div class="tiny nm">${esc(a.note)}</div>
-    </div>`).join("")}
+      <div class="tiny nm">${esc(a.note)}</div></div>`).join("")}
   </div>
 
   <h2>Where you stand</h2>
   <div class="card">
-    ${agg.rating ? `<div class="num">${agg.rating}</div>
-      <div class="tiny">latest rating in these games${agg.best && agg.best > agg.rating ? `, best saved here ${agg.best}` : ""}</div>` : ""}
-    ${agg.oppAvg ? `<p>The people you play average ${agg.oppAvg}. ${
-      agg.beatBelow !== null ? `You are rated above ${pct(agg.beatBelow)} of them.` : ""}</p>` : ""}
-    ${agg.beatStronger ? `<p>You have ${agg.beatStronger} win${agg.beatStronger === 1 ? "" : "s"} against
-      higher rated opponents${agg.bestWin ? `, the best of them rated ${agg.bestWin.op}` : ""}.</p>` : ""}
-    <div class="tiny">This compares you with the players you actually face, which is the only honest
-    comparison available. chess.com does not publish country or world placings through its public data,
-    and the percentile figures floating around online disagree with each other wildly.</div>
+    ${agg.rating ? `<div class="num">${agg.rating}</div><div class="tiny">latest rating in these games${
+      agg.best && agg.best > agg.rating ? `, best saved here ${agg.best}` : ""}</div>` : ""}
+    ${agg.oppAvg ? `<p>The people you play average ${agg.oppAvg}${
+      agg.beatBelow !== null ? `, and you are rated above ${pct(agg.beatBelow)} of them` : ""}.</p>` : ""}
+    ${agg.beatStronger ? `<p>${agg.beatStronger} win${agg.beatStronger === 1 ? "" : "s"} against higher rated
+      opponents${agg.bestWin ? `, best of them rated ${agg.bestWin.op}` : ""}.</p>` : ""}
+    <div class="tiny">This compares you with the players you actually face. chess.com does not publish
+    country or world placings in its public data, and the percentile figures online contradict each other.</div>
   </div>
 
-  <h2>Everything going for you</h2>
+  <h2>Settings</h2>
   <div class="card">
-    ${str.map((s) => `<div class="strow"><div><div>${esc(s.label)}</div>
-      <div class="tiny nm">${esc(s.detail)}</div></div></div>`).join("")}
+    <div class="hab"><div><div>Beginner mode</div>
+      <div class="tiny nm">Writes moves as sentences instead of Nf3</div></div>
+      <button class="btn sm ${S.plain ? "pri" : ""}" data-a="plain">${S.plain ? "on" : "off"}</button></div>
+    <div class="hab"><div><div>Chess words</div>
+      <div class="tiny nm">What the terms in here mean</div></div>
+      <button class="btn sm" data-a="glossary">${S.glossary ? "hide" : "show"}</button></div>
   </div>
+  ${S.glossary ? `<div class="card">${GLOSSARY.map(([t, d]) =>
+    `<div class="gl"><b>${esc(t)}</b><div class="tiny nm">${esc(d)}</div></div>`).join("")}</div>` : ""}
 
-  <h2>Your openings, explained</h2>
+  <h2>Your openings</h2>
   ${agg.openingList.slice(0, 8).map((o) => `<div class="card">
-    <div class="between">
-      <div class="t nm">${esc(o.name)}</div>
-      <span class="mono ${o.n < 3 ? "faint" : o.score >= 0.5 ? "good" : "bad"}">${pct(o.score)}</span>
-    </div>
+    <div class="between"><div class="t nm">${esc(o.name)}</div>
+      <span class="mono ${o.n < 3 ? "faint" : o.score >= 0.5 ? "good" : "bad"}">${pct(o.score)}</span></div>
     <div class="tiny nm">${o.n} game${o.n > 1 ? "s" : ""}, mostly as ${o.white >= o.n / 2 ? "white" : "black"}${
-      o.n < 3 ? ". Too few to read anything into yet." : ""}</div>
-    <p>${esc(openingNote(o.name))}</p>
-  </div>`).join("")}
+      o.n < 3 ? ". Too few to read into." : ""}</div>
+    <p>${esc(openingNote(o.name))}</p></div>`).join("")}
 
-  <h2>Opening habits</h2>
+  <h2>Habits and where things happen</h2>
   <div class="card">
-    ${[["Castled", pct(agg.castledShare), agg.avgCastleMove ? `usually around move ${Math.round(agg.avgCastleMove)}` : "when you do", agg.castledShare >= 0.75],
-       ["Pieces still home at move 12", agg.homeAt12.toFixed(1), "out of four knights and bishops", agg.homeAt12 < 1.5],
-       ["Pawn moves in your first ten", agg.pawnPushes.toFixed(1), "two or three is usually plenty", agg.pawnPushes < 5],
-       ["Queen moves in your first eight", agg.queenEarly.toFixed(1), "she is usually better off waiting", agg.queenEarly < 2]]
+    ${[["Castled", pct(agg.castledShare), agg.avgCastleMove ? `usually move ${Math.round(agg.avgCastleMove)}` : "when you do", agg.castledShare >= 0.75],
+       ["Pieces still home at move 12", agg.homeAt12.toFixed(1), "out of four", agg.homeAt12 < 1.5],
+       ["Pawn moves in your first ten", agg.pawnPushes.toFixed(1), "two or three is plenty", agg.pawnPushes < 5],
+       ["Queen moves in your first eight", agg.queenEarly.toFixed(1), "she is better off waiting", agg.queenEarly < 2]]
       .map(([l, v, note, ok]) => `<div class="hab"><div><div>${l}</div>
         <div class="tiny nm">${note}</div></div><span class="mono ${ok ? "good" : "watch"}">${v}</span></div>`).join("")}
   </div>
-
-  <h2>Where things happen</h2>
-  <div class="card">
-    ${groupBars(agg.byPhase, ["given", "missed"], ["#b0392b", "#c89a3c"], ["Pieces lost", "Free material missed"])}
-    <div class="tiny">Opening is moves 1 to 10, middlegame to 28, endgame after that.</div>
-  </div>
-  ${Object.keys(agg.byPiece).length ? `<div class="card">
-    <div class="t nm">Which piece goes most</div>
+  <div class="card">${groupBars(agg.byPhase, ["given", "missed"], ["#b0392b", "#c89a3c"],
+    ["Pieces lost", "Free material missed"])}
+    <div class="tiny">Opening is moves 1 to 10, middlegame to 28, endgame after.</div></div>
+  ${Object.keys(agg.byPiece).length ? `<div class="card"><div class="t nm">Which piece goes most</div>
     ${hBars(Object.entries(agg.byPiece).sort((a, b) => b[1] - a[1]), "#b08553")}</div>` : ""}
-  ${Object.keys(agg.endings).length ? `<div class="card">
-    <div class="t nm">How your losses finish</div>
+  ${Object.keys(agg.endings).length ? `<div class="card"><div class="t nm">How your losses finish</div>
     ${hBars(Object.entries(agg.endings).sort((a, b) => b[1] - a[1]), "#b0392b")}</div>` : ""}`;
 }
+
+const GLOSSARY = [
+  ["Hanging", "A piece sitting where it can be captured and nothing is defending it."],
+  ["Material", "The pieces you have, counted in points. Pawn 1, knight and bishop 3, rook 5, queen 9."],
+  ["Development", "Getting your knights and bishops off the back row so they actually do something."],
+  ["Castling", "The one move where the king and rook move together, tucking the king away safely."],
+  ["Blunder", "A move that loses material or the game outright."],
+  ["Opening", "The first few moves. Named lines exist for the common ones."],
+  ["Middlegame", "After both sides have developed, before pieces start coming off."],
+  ["Endgame", "Few pieces left, usually kings and pawns doing most of the work."],
+  ["Mate in one", "A single move that ends the game there and then."],
+  ["Fork", "One piece attacking two things at once."],
+  ["En prise", "French for hanging. A piece that can just be taken."],
+  ["Notation", "Nf3 means knight to f3. x means takes, + means check, # means checkmate."],
+];
 
 function screenGames(agg) {
   const list = S.games.slice().reverse();
@@ -1847,9 +2249,7 @@ function screenGames(agg) {
   const ratings = S.games.filter((g) => g.my).map((g) => g.my);
   return `
   ${ratings.length >= 3 ? `<h2>Rating</h2><div class="card">
-    ${lineChart(ratings, ["oldest", "latest"], "#1f6f5c", { dots: false })}
-    <div class="tiny">Every time control on one line, oldest first.</div></div>` : ""}
-
+    ${lineChart(ratings, ["oldest", "latest"], "#1f6f5c", { dots: false })}</div>` : ""}
   <h2>How the games end up</h2>
   <div class="card">
     <div class="num">${agg.all.w}<em>W</em> ${agg.all.d}<em>D</em> ${agg.all.l}<em>L</em></div>
@@ -1857,48 +2257,50 @@ function screenGames(agg) {
       <i style="width:${(agg.all.d / agg.n) * 100}%;background:#cfc6b6"></i>
       <i style="width:${(agg.all.l / agg.n) * 100}%;background:#b0392b"></i></div>
     <div class="tiny">${pct(agg.white.score)} as white, ${pct(agg.black.score)} as black.
-      ${agg.wasWinning ? `You reached a winning position in ${agg.wasWinning} of them and converted ${agg.converted}.` : ""}</div>
+      ${agg.wasWinning ? `Winning position in ${agg.wasWinning}, converted ${agg.converted}.` : ""}</div>
   </div>
-
   <h2>${list.length} games</h2>
   ${shown.map((g) => {
     const bad = g.mis.filter((m) => (m.k === "g" && m.pun) || m.k === "am" || m.k === "mm");
     const story = gameStory(g);
     return `<button class="card list" data-a="open" data-id="${esc(g.id)}" data-ply="0">
-      <div class="between">
-        <span class="chip ${g.r === "win" ? "good" : g.r === "loss" ? "bad" : "watch"}">${g.r}</span>
-        <span class="tiny nm">${new Date(g.d).toLocaleDateString()} · ${esc(g.cls)}</span>
-      </div>
+      <div class="between"><span class="chip ${g.r === "win" ? "good" : g.r === "loss" ? "bad" : "watch"}">${g.r}</span>
+        <span class="tiny nm">${new Date(g.d).toLocaleDateString()} · ${esc(g.cls)}</span></div>
       ${strip(g.mat, bad.map((m) => m.p))}
       ${story ? `<p class="story">${esc(story)}</p>` : ""}
       <div class="tiny">${g.c === "w" ? "White" : "Black"} vs ${esc(g.opp)}${g.op ? ` (${g.op})` : ""}
-        · ${esc(g.o)} · ${esc(g.end)}</div>
-    </button>`;
+        · ${esc(g.o)} · ${esc(g.end)}</div></button>`;
   }).join("")}
   ${list.length > shown.length ? `<button class="card list mid" data-a="more">Show 25 more of ${list.length}</button>` : ""}
-  <div class="card">
-    <div class="t nm">More history</div>
+  <div class="card"><div class="t nm">More history</div>
     <p>Refresh looks at this month and last. This goes back a year.</p>
-    <button class="btn wide" data-a="sync12" ${S.busy ? "disabled" : ""}>Pull the last 12 months</button>
-  </div>`;
+    <button class="btn wide" data-a="sync12" ${S.busy ? "disabled" : ""}>Pull the last 12 months</button></div>`;
 }
 
 function screenViewer() {
   const g = S.games.find((x) => x.id === S.view);
   if (!g) return `<div class="card">Game not found.</div>`;
-  const data = replay(g.pgn, S.name);
-  if (!data) return `<div class="card">Could not rebuild this game.</div>`;
-  const plies = data.plies;
+  let rep = replayCache.get(g.id);
+  if (!rep) { rep = replay(g.pgn, S.name); if (rep) replayCache.set(g.id, rep); }
+  if (!rep) return `<div class="card">Could not rebuild this game.</div>`;
+  const plies = rep.plies;
   const i = Math.max(0, Math.min(S.ply, plies.length - 1));
   const p = plies[i];
-  const flagged = g.mis.map((x) => x.p);
+  const flagged = g.mis.map((x) => x.p).sort((a, b) => a - b);
   const m = g.mis.find((x) => x.p === i);
-  const prev = [...flagged].sort((a, b) => a - b).reverse().find((x) => x < i);
-  const next = [...flagged].sort((a, b) => a - b).find((x) => x > i);
+  const prev = [...flagged].reverse().find((x) => x < i);
+  const next = flagged.find((x) => x > i);
   const tone = m ? (m.k === "mm" || m.k === "am" ? "purple" : m.k === "m" ? "green" : "") : "";
-  const mark = m ? { target: m.sq, arrow: [m.at, m.sq], tone, from: p.from, to: p.to }
-    : { from: p.from, to: p.to };
+  const before = i > 0 ? plies[i - 1].board : START;
 
+  let boardStr = p.board, mark = { from: p.from, to: p.to };
+  if (m) mark = { target: m.sq, arrow: [m.at, m.sq], tone, from: p.from, to: p.to };
+  if (S.showBest && S.best) {
+    boardStr = before;
+    mark = { arrow: [S.best.from, S.best.to], target: S.best.to, tone: "green" };
+  }
+
+  const why = m ? whyFor(m, plies) : [];
   return `
   <div class="between vhead">
     <button class="btn sm" data-a="back">All games</button>
@@ -1909,9 +2311,9 @@ function screenViewer() {
     <div class="tiny nm">${new Date(g.d).toLocaleDateString()} · ${esc(g.cls)} · ${esc(g.o)} · ${esc(g.end)}</div>
     ${gameStory(g) ? `<p class="story">${esc(gameStory(g))}</p>` : ""}
   </div>
-  ${boardHTML(p.board, g.c === "b", mark, S.inspect)}
-  ${matBar(p.mat)}
-  ${inspectNote(p.board, S.inspect, g.c)}
+  ${boardHTML(boardStr, g.c === "b", mark, { inspect: S.inspect })}
+  ${matBar(S.showBest ? (i > 0 ? plies[i - 1].mat : 0) : p.mat)}
+  ${S.inspect != null ? inspectNote(boardStr, S.inspect, g.c) : `<div class="tiny mid">Tap a square to see what is aiming at it.</div>`}
   <div class="ctrls">
     <button class="btn" data-a="ply" data-d="-1">‹</button>
     <button class="btn" data-a="jump" data-p="${prev === undefined ? "" : prev}" ${prev === undefined ? "disabled" : ""}>Prev</button>
@@ -1925,55 +2327,66 @@ function screenViewer() {
   }).join("")}</div>
 
   <div class="card ${m ? "flagcard" : ""}">
-    <div class="mono">${p.moveNo}${p.mine === (g.c === "w") ? "." : "..."} ${esc(p.san)}
-      <span class="faint">${p.mine && p.spent != null ? `${fmtS(p.spent)} on it` : ""}${
-        p.check ? (p.mine ? " · check" : " · you were in check") : ""}</span></div>
-    ${m ? `<p>${describe(m)}</p><div class="tiny">The arrow shows ${
-      m.k === "m" ? "the capture that was available" : m.k === "mm" ? "the mate that was there"
-      : m.k === "am" ? "the mate they had in reply" : "which piece could take yours"}.${
-      m.ck ? " You were in check when this came up, which is when it is hardest to look around." : ""}</div>`
-      : `<div class="tiny">Nothing loose here. Next moment skips to the ones worth seeing.</div>`}
+    <div class="mono">${p.moveNo}${p.mine === (g.c === "w") ? "." : "..."} ${esc(mv(p.san))}
+      <span class="faint">${p.mine && p.spent != null ? ` ${fmtS(p.spent)} on it` : ""}</span></div>
+    ${m ? `<p>${describe(m)}</p>
+      ${why.length ? `<ul class="why">${why.map((w) => `<li>${esc(w)}</li>`).join("")}</ul>` : ""}` : ""}
+    ${p.mine ? `<div class="row" style="gap:8px;margin-top:10px">
+      <button class="btn ${S.showBest ? "pri" : ""}" style="flex:1" data-a="best" data-i="${i}">
+        ${S.busy === "think" ? "Working it out" : S.showBest ? "Back to the game" : "What wins here?"}</button>
+    </div>
+    ${S.showBest && S.best ? `<div class="bestbox">
+      <div class="t nm">${S.best.mate ? "Mate" : S.best.gain > 0 ? `Wins ${S.best.gain} points` : "Nothing wins material here"}</div>
+      <p>${esc(mv(S.best.san))}${S.plain ? "" : `, that is ${esc(sanToWords(S.best.san))}`}. Shown by the green arrow, from the
+      position before your move.</p>
+      <div class="tiny">Found by searching a few moves deep counting material only. It spots free
+      pieces, forks and mate. It does not judge plans or long term ideas.</div>
+    </div>` : ""}` : ""}
   </div>
 
   ${g.mis.length ? `<h2>Everything flagged here</h2>
     ${g.mis.slice().sort((a, b) => a.p - b.p).map((x) => `
       <button class="card list ${x.p === i ? "here" : ""}" data-a="jump" data-p="${x.p}">
-        <div class="between"><span class="mono acc">move ${x.mv}, ${esc(x.s)}</span>
+        <div class="between"><span class="mono acc">move ${x.mv}, ${esc(mv(x.s))}</span>
           <span class="chip ${x.k === "mm" || x.k === "am" ? "purple" : x.k === "m" ? "watch" : x.pun ? "bad" : "watch"}">${esc(KINDNAME[x.k])}</span></div>
         <p>${describe(x)}</p></button>`).join("")}` : ""}`;
 }
 
+function inspectNote(boardStr, i, myColor) {
+  const am = attackMap(boardStr.split(""));
+  const mine = am[myColor][i].length;
+  const theirs = am[myColor === "w" ? "b" : "w"][i].length;
+  const p = boardStr[i];
+  const who = p === "." ? "Empty square" : `${colorOf(p) === myColor ? "Your" : "Their"} ${NAMES[p.toLowerCase()]}`;
+  return `<div class="inspect"><b>${sqName(i)}</b> ${who}. Yours aiming at it: ${mine}. Theirs: ${theirs}.
+    ${p !== "." && colorOf(p) === myColor && theirs > mine ? "More of theirs than yours, worth a look." : ""}
+    <button class="lnk" data-a="clearsq">clear</button></div>`;
+}
+
 function screenEmpty() {
-  return `<div class="card">
-    <div class="t nm">Let's get your games in</div>
+  return `<div class="card"><div class="t nm">Let's get your games in</div>
     <p>Everything is worked out on your phone and stays here, so next time you only add what is new.</p>
     <button class="btn pri wide" data-a="sync6">Try pulling them from chess.com</button>
     <button class="btn wide" data-a="file">Add a PGN file instead</button>
     <div class="tiny">chess.com does not always allow the direct download from another site. The file
-    route always works.</div>
-  </div>${howTo()}`;
+    route always works.</div></div>${howTo()}`;
 }
 
 function howTo() {
   const now = new Date();
   const url = `api.chess.com/pub/player/${S.name || "you"}/games/${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, "0")}/pgn`;
   return `<h2>Getting a month as a file</h2>
-  <div class="card">
-    <p class="nm">Open this in your browser and the file downloads on its own. Change the year and
-    month for older ones.</p>
+  <div class="card"><p class="nm">Open this in your browser and the file downloads on its own.
+    Change the year and month for older ones.</p>
     <div class="url mono">${esc(url)}</div>
-    <div class="tiny">Then tap Add games and pick it. Adding the same games twice is fine.</div>
-  </div>
+    <div class="tiny">Then tap Add games and pick it. Adding the same games twice is fine.</div></div>
   <h2>Or one game at a time</h2>
-  <div class="card">
-    <p class="nm">On iPhone: open the game, tap the magnifying glass, then Options, Share, Copy.
-    On Android: open the game, tap More at the bottom left, then Export PGN, Copy.</p>
+  <div class="card"><p class="nm">On iPhone: open the game, tap the magnifying glass, then Options,
+    Share, Copy. On Android: open the game, tap More at the bottom left, then Export PGN, Copy.</p>
     <textarea id="paste" placeholder="Paste PGN text here"></textarea>
-    <button class="btn pri wide" data-a="paste">Add pasted games</button>
-  </div>`;
+    <button class="btn pri wide" data-a="paste">Add pasted games</button></div>`;
 }
 
-/* ---------- written review ---------- */
 function briefFor(agg) {
   const sp = styleProfile(agg);
   return {
@@ -1981,10 +2394,11 @@ function briefFor(agg) {
     record: { wins: agg.all.w, draws: agg.all.d, losses: agg.all.l },
     scoreAsWhitePct: Math.round(agg.white.score * 100), scoreAsBlackPct: Math.round(agg.black.score * 100),
     typicalOpponentRating: agg.oppAvg, winsAgainstStrongerOpponents: agg.beatStronger,
+    sixAreaScores: areaScores(agg).map((a) => `${a.label}: ${a.v == null ? "not enough data" : a.v + " out of 100"}`),
     whatIsGoingWell: strengths(agg).slice(0, 5).map((s) => `${s.label}: ${s.detail}`),
     reachedWinningPosition: agg.wasWinning, convertedThoseToWins: agg.converted,
-    lostAfterBeingWinning: agg.threwAway,
-    wonAfterBeingThreeDown: agg.comebacks, gamesWithNoPiecesDropped: agg.clean,
+    lostAfterBeingWinning: agg.threwAway, wonAfterBeingThreeDown: agg.comebacks,
+    gamesWithNoPiecesDropped: agg.clean,
     piecesGivenAwayPerGame: +agg.givenPer.toFixed(2),
     benchmarkForThisRating: `under ${agg.level.give[0]} is good, over ${agg.level.give[1]} is high`,
     freeMaterialMissedPerGame: +agg.missedPer.toFixed(2),
@@ -1996,10 +2410,7 @@ function briefFor(agg) {
     castledPct: Math.round(agg.castledShare * 100), averageCastlingMove: agg.avgCastleMove,
     piecesStillHomeAtMoveTwelve: +agg.homeAt12.toFixed(1),
     pawnMovesInFirstTen: +agg.pawnPushes.toFixed(1), queenMovesInFirstEight: +agg.queenEarly.toFixed(1),
-    averageGameLengthMoves: Math.round(agg.avgLen),
-    shareOfMovesThatGiveCheck: +(agg.checkRate).toFixed(3),
-    shareOfMovesThatCapture: +(agg.captureRate).toFixed(3),
-    styleClosestTo: sp.best.name, styleSecond: sp.second.name,
+    averageGameLengthMoves: Math.round(agg.avgLen), styleClosestTo: sp.best.name,
     mistakesByPhase: agg.byPhase, piecesLostByType: agg.byPiece, howLossesEnd: agg.endings,
     openings: agg.openingList.filter((o) => o.n >= 3).slice(0, 8)
       .map((o) => ({ name: o.name, games: o.n, scorePct: Math.round(o.score * 100) })),
@@ -2014,11 +2425,11 @@ function briefFor(agg) {
 }
 
 const PROMPT = (brief) =>
-`You are a good coach looking over a player's own games with them. Write to them directly, like someone sitting next to them going through it, not like a report.
+`You are a good coach going through a player's own games with them. Write to them directly, like someone sitting next to them, not like a report.
 
-Their data is below. It comes from a static analyser, not an engine: it can see pieces that could simply be captured, free material that was not taken, and mate in one in both directions. It cannot see pins, forks, plans, structure or anything two moves deep. Never invent engine evaluations, accuracy scores, or opening theory the data does not support. If the data cannot answer something, say so plainly rather than guessing.
+The data comes from a static analyser plus a small material-only search, not a full engine. It sees pieces that could be captured, free material not taken, and mate in one in both directions. It cannot see pins, long plans, structure or anything deep. Never invent engine evaluations, accuracy scores or opening theory the data does not support. If the data cannot answer something, say so.
 
-Read the rating band before you write. What counts as sloppy at 1800 is normal at 400, and what is normal at 400 would be alarming at 1800. Judge them against their own level, and if the numbers are good for their level, say that clearly instead of hunting for something to criticise.
+Read the rating band before you write. What is sloppy at 1800 is normal at 400. Judge them against their own level, and if their numbers are good for that level, say so plainly instead of hunting for faults.
 
 DATA
 ${JSON.stringify(brief, null, 2)}
@@ -2026,24 +2437,23 @@ ${JSON.stringify(brief, null, 2)}
 Write about 450 words with these headings on their own lines:
 
 WHAT YOU ARE DOING WELL
-Two or three sentences, specific and earned from the data. Not encouragement for its own sake, real things they are doing right.
+Two or three sentences, specific and earned from the data.
 
 THE PATTERN WORTH SEEING
-The one thing that would change their results most. Explain why it costs them, not just that it does. Where the data lets you, talk about the shape of their games rather than single moves: getting ahead and not converting, collapsing late, and so on.
+The one thing that would change their results most, and why it costs them. Where the data allows, talk about the shape of their games rather than single moves.
 
 TWO THINGS TO TRY
-Two of them, each with a short heading on its own line. Something concrete to do at the board and why it works. Frame it as a next step from where they already are, not as correcting a fault.
+Two, each with a short heading on its own line. Something concrete to do at the board and why it works.
 
-Voice: plain English, contractions, second person, warm and level. Say "this is good, and here is how it gets better" rather than pointing at faults. No em dashes, no markdown, no asterisks, no bullet characters, no flattery, no motivational filler, no restating this brief. Vary sentence length. Sound like a person who has actually looked at these games.`;
+Voice: plain English, contractions, second person, warm and level. Say "this is good, and here is how it gets better" rather than pointing at faults. No em dashes, no markdown, no asterisks, no bullet characters, no flattery, no filler. Vary sentence length. Sound like a person who has looked at these games.`;
 
 function screenReview(agg) {
   const hosted = !window.storage;
-  return `<div class="card">
-    <div class="t nm">The long version</div>
-    <p>Takes everything in the app, including what is going well, and writes it up properly. Saved once written.</p>
-    ${hosted && !S.apiKey ? `
-      <button class="btn pri wide" data-a="copybrief">Copy it all for Claude</button>
-      <div class="tiny">Paste that into Claude and it writes the review. Keeps this app free and offline.</div>
+  return `<button class="btn sm" data-a="tab" data-t="today">Back</button>
+  <div class="card" style="margin-top:12px"><div class="t nm">The long version</div>
+    <p>Everything in the app, including what is going well, written up properly. Saved once written.</p>
+    ${hosted && !S.apiKey ? `<button class="btn pri wide" data-a="copybrief">Copy it all for Claude</button>
+      <div class="tiny">Paste into Claude and it writes the review. Keeps this app free and offline.</div>
       <button class="lnk" data-a="keyprompt">Or add your own API key so it writes it here</button>`
     : `<button class="btn pri wide" data-a="review" ${S.busy ? "disabled" : ""}>
         ${S.busy ? "Reading your games" : S.review ? "Write a fresh one" : "Write my review"}</button>
@@ -2060,6 +2470,7 @@ function render() {
   const app = document.getElementById("app");
   if (!S.ready) { app.innerHTML = `<div class="w"><div class="tiny pad">Loading</div></div>`; return; }
   if (S.screen === "login") { app.innerHTML = `<div class="w">${screenLogin()}</div>`; return; }
+  if (S.screen === "intro") { app.innerHTML = `<div class="w">${screenIntro()}</div>`; return; }
 
   const agg = S.games.length ? aggregate(S.games) : null;
   let body;
@@ -2067,11 +2478,12 @@ function render() {
   else if (!S.games.length) body = screenEmpty();
   else if (S.tab === "today") body = screenToday(agg);
   else if (S.tab === "games") body = screenGames(agg);
+  else if (S.tab === "practice") body = screenPractice();
   else if (S.tab === "you") body = screenYou(agg);
   else body = screenReview(agg);
 
   const tabs = [["today", "\u25CE", "Today"], ["games", "\u25A4", "Games"],
-    ["you", "\u2657", "You"], ["review", "\u2691", "Review"]];
+    ["practice", "\u2694", "Practice"], ["you", "\u2657", "You"]];
 
   app.innerHTML = `
     <header><div class="w between">
@@ -2081,14 +2493,14 @@ function render() {
         ${S.games.length ? `<button class="btn sm" data-a="sync2" ${S.busy ? "disabled" : ""}>Refresh</button>` : ""}
         <button class="btn pri sm" data-a="file" ${S.busy ? "disabled" : ""}>Add games</button>
       </div></div></header>
-    ${S.busy ? `<div class="w"><div class="working"><span class="dot"></span>${esc(S.busy)}</div></div>` : ""}
+    ${S.busy ? `<div class="w"><div class="working"><span class="dot"></span>${esc(S.busy === "think" ? "Working it out" : S.busy)}</div></div>` : ""}
     ${S.pick ? `<div class="w"><div class="card warn"><div class="t nm">Which player are you?</div>
       <div class="tiny">That file has several names in it.</div>
       <div class="pills">${S.pick.map((o) => `<button class="btn pri sm" data-a="setname" data-n="${esc(o)}">${esc(o)}</button>`).join("")}</div>
     </div></div>` : ""}
     <main class="w">${body}</main>
     ${S.toast ? `<div class="toast">${esc(S.toast)}</div>` : ""}
-    ${S.games.length && !S.view ? `<nav class="nav">${tabs.map(([k, gl, l]) =>
+    ${S.games.length && !S.view && S.tab !== "review" ? `<nav class="nav">${tabs.map(([k, gl, l]) =>
       `<button data-a="tab" data-t="${k}" class="${S.tab === k ? "on" : ""}"><span class="g">${gl}</span>${l}</button>`).join("")}</nav>` : ""}`;
 }
 
@@ -2103,27 +2515,126 @@ document.addEventListener("click", async (e) => {
   if (a === "login") {
     const v = (document.getElementById("user") || {}).value || "";
     if (!v.trim()) return;
-    await loadUser(v);
-    render();
-    await upgradeSaved();
-    render();
-    if (!S.games.length) syncChessCom(6);
+    await loadUser(v); render(); await upgradeSaved(); render();
+    if (S.screen === "app" && !S.games.length) syncChessCom(6);
   }
+  else if (a === "intronext") {
+    if (S.intro < INTRO.length - 1) { S.intro++; render(); }
+    else { S.seenIntro = true; S.screen = "app"; await persist(); render(); syncChessCom(6); }
+  }
+  else if (a === "introback") { S.intro--; render(); }
+  else if (a === "introskip") { S.seenIntro = true; S.screen = "app"; await persist(); render(); }
   else if (a === "signout") { S.screen = "login"; S.view = null; S.games = []; S.name = ""; await store.set(LAST, ""); render(); }
   else if (a === "file") document.getElementById("file").click();
   else if (a === "sync6") syncChessCom(6);
   else if (a === "sync2") syncChessCom(2);
   else if (a === "sync12") syncChessCom(12);
-  else if (a === "tab") { S.tab = el.dataset.t; S.view = null; S.inspect = null; render(); scrollTo(0, 0); }
-  else if (a === "open") { S.view = el.dataset.id; S.ply = +el.dataset.ply; S.inspect = null; render(); scrollTo(0, 0); }
-  else if (a === "back") { S.view = null; S.inspect = null; render(); }
-  else if (a === "ply") { S.ply += +el.dataset.d; render(); }
-  else if (a === "jump") { if (el.dataset.p === "") return; S.ply = +el.dataset.p; render(); }
+  else if (a === "tab") {
+    S.tab = el.dataset.t; S.view = null; S.inspect = null; S.showBest = false; S.best = null;
+    render(); scrollTo(0, 0);
+  }
+  else if (a === "open") {
+    S.view = el.dataset.id; S.ply = +el.dataset.ply; S.inspect = null;
+    S.showBest = false; S.best = null; render(); scrollTo(0, 0);
+  }
+  else if (a === "back") { S.view = null; S.inspect = null; S.showBest = false; render(); }
+  else if (a === "ply") { S.ply += +el.dataset.d; S.showBest = false; S.best = null; render(); }
+  else if (a === "jump") { if (el.dataset.p === "") return; S.ply = +el.dataset.p; S.showBest = false; S.best = null; render(); }
   else if (a === "sq") { const i = +el.dataset.i; S.inspect = S.inspect === i ? null : i; render(); }
   else if (a === "clearsq") { S.inspect = null; render(); }
   else if (a === "more") { S.shown += 25; render(); }
+  else if (a === "plain") { S.plain = !S.plain; await persist(); render(); }
+  else if (a === "glossary") { S.glossary = !S.glossary; render(); }
   else if (a === "paste") { const ta = document.getElementById("paste"); if (ta && ta.value.trim()) importText(ta.value); }
   else if (a === "setname") importText(S.pending, el.dataset.n);
+
+  /* what wins here */
+  else if (a === "best") {
+    if (S.showBest) { S.showBest = false; S.best = null; render(); return; }
+    const g = S.games.find((x) => x.id === S.view);
+    const rep = replayCache.get(g.id) || replay(g.pgn, S.name);
+    replayCache.set(g.id, rep);
+    const i = +el.dataset.i;
+    const before = i > 0 ? rep.plies[i - 1].board : START;
+    S.busy = "think"; render(); await tick();
+    const st = { board: before.split(""), turn: rep.color, castling: "KQkq", ep: null };
+    S.best = bestMove(st, 4);
+    S.busy = ""; S.showBest = true; S.inspect = null; render();
+  }
+
+  /* practice */
+  else if (a === "makedrills") {
+    S.busy = "Picking positions from your games"; render(); await tick();
+    S.drills = buildDrills(S.games, S.name, 12, replayCache);
+    S.di = 0; S.dFrom = null; S.dResult = null; S.dScore = { right: 0, done: 0 };
+    S.busy = ""; render();
+  }
+  else if (a === "dsq") {
+    if (S.dResult) return;
+    const i = +el.dataset.i;
+    const d = S.drills[S.di];
+    const st = { board: d.board.split(""), turn: d.color, castling: "KQkq", ep: null };
+    if (S.dFrom == null) {
+      const p = st.board[i];
+      if (p !== "." && colorOf(p) === d.color) { S.dFrom = i; render(); }
+      return;
+    }
+    if (i === S.dFrom) { S.dFrom = null; render(); return; }
+    const legal = allLegalMoves(st).find((m) => m.from === S.dFrom && m.to === i);
+    if (!legal) {
+      const p = st.board[i];
+      if (p !== "." && colorOf(p) === d.color) { S.dFrom = i; render(); }
+      return;
+    }
+    S.busy = "think"; render(); await tick();
+    const r = judgeDrill(d, S.dFrom, i, legal.promo);
+    S.dScore.done++; if (r.ok) S.dScore.right++;
+    S.dResult = r; S.dFrom = null; S.busy = ""; render();
+  }
+  else if (a === "dclear") { S.dFrom = null; render(); }
+  else if (a === "dreveal") {
+    const d = S.drills[S.di];
+    S.busy = "think"; render(); await tick();
+    const st = { board: d.board.split(""), turn: d.color, castling: "KQkq", ep: null };
+    const b = bestMove(st, 3);
+    S.dResult = { ...S.dResult, reveal: b };
+    S.busy = ""; render();
+  }
+  else if (a === "dskip") { S.di++; S.dFrom = null; S.dResult = null; if (S.di >= S.drills.length) S.di = 0; render(); }
+  else if (a === "dnext") {
+    S.di++; S.dFrom = null; S.dResult = null;
+    if (S.di >= S.drills.length) { S.di = 0; S.toast = `Round done. ${S.dScore.right} out of ${S.dScore.done}.`; }
+    render();
+    if (S.toast) setTimeout(() => { S.toast = null; render(); }, 5000);
+  }
+
+  /* comparison */
+  else if (a === "cmpuser") {
+    const v = (document.getElementById("cmp") || {}).value || "";
+    if (!v.trim()) return;
+    S.compareName = v.trim();
+    S.busy = `Fetching ${S.compareName}`; render();
+    try {
+      const text = await fetchGamesFor(S.compareName, 3);
+      const recs = splitPGN(text).map((c) => { try { return buildRecord(c, S.compareName); } catch { return null; } })
+        .filter(Boolean).slice(-60);
+      if (!recs.length) throw new Error("no games");
+      S.compare = { label: S.compareName, agg: aggregate(recs) };
+      S.busy = ""; render();
+    } catch (err) {
+      S.busy = "";
+      S.toast = /No chess\.com/.test(err.message) ? err.message
+        : "Could not fetch that player from here. chess.com blocks it from some sites.";
+      render(); setTimeout(() => { S.toast = null; render(); }, 6000);
+    }
+  }
+  else if (a === "cmpself") {
+    const half = Math.floor(S.games.length / 2);
+    S.compare = { label: "your earlier games", agg: aggregate(S.games.slice(0, half)) };
+    render();
+  }
+  else if (a === "cmpclear") { S.compare = null; render(); }
+
   else if (a === "keyprompt") {
     const k = prompt("Anthropic API key. Stored on this device only.", S.apiKey || "");
     if (k !== null) { S.apiKey = k.trim(); await persist(); render(); }
@@ -2164,8 +2675,8 @@ document.addEventListener("keydown", (e) => {
     document.querySelector('[data-a="login"]')?.click();
   }
   if (!S.view) return;
-  if (e.key === "ArrowRight") { S.ply++; render(); }
-  if (e.key === "ArrowLeft") { S.ply--; render(); }
+  if (e.key === "ArrowRight") { S.ply++; S.showBest = false; render(); }
+  if (e.key === "ArrowLeft") { S.ply--; S.showBest = false; render(); }
 });
 
 document.addEventListener("change", async (e) => {
@@ -2180,13 +2691,13 @@ document.addEventListener("change", async (e) => {
 
 let touchX = null;
 document.addEventListener("touchstart", (e) => {
-  if (e.target.closest(".board")) touchX = e.touches[0].clientX;
+  if (e.target.closest(".board") && S.view) touchX = e.touches[0].clientX;
 }, { passive: true });
 document.addEventListener("touchend", (e) => {
   if (touchX == null) return;
   const dx = e.changedTouches[0].clientX - touchX;
   touchX = null;
-  if (Math.abs(dx) > 45 && S.view) { S.ply += dx < 0 ? 1 : -1; S.inspect = null; render(); }
+  if (Math.abs(dx) > 45 && S.view) { S.ply += dx < 0 ? 1 : -1; S.inspect = null; S.showBest = false; render(); }
 }, { passive: true });
 
 (async () => {
