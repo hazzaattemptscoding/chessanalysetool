@@ -1,225 +1,1625 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Chess post mortem</title>
-<meta name="description" content="Your chess.com games in plain English: what went well, what slipped, what wins, and drills from your own positions.">
-<meta name="theme-color" content="#faf7f1">
-<meta name="color-scheme" content="light">
+<meta name="description" content="Grades every move in your chess.com games, tells you what to play instead and why, and drills the positions you got wrong.">
+<meta name="theme-color" content="#f5f0e4">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Post mortem">
 <link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAIAAACyr5FlAAACIklEQVR42u3dsW3CQBSA4UeUhiloMwYDMAIFG7iLGCGiYwOGYICskI4ZMgUFpXHI4QPhd99XEkQs/OudbWF5tujWAde8+QoQB+JAHIgDcSAOxIE4EAfiAHEgDsSBOBAH4kAciANxIA4QB+JAHIgDcSAOxIE4EAfiAHEgDsq9P+ff/Hx21T/z+/BV/TOXm+0ktjMiut+5yYFlBXEgDsSBOBAHiANxIA7EgTgQB+JAHIgDcYA4EAfiQByIA3EgDsSBOBAHjXvSvbIt39f6iO2MiNjtTQ4sK4gDxxx5HU9XXlx9iEMWf/4pXSKWldFlFL1HHC2WkbEPcdTe34n6cMwx+vCz/57jKcfxh8lRqL/Xk56qiKNwbAx10H89xeIijhEzI/v8EAfiQByIA3G8+MlLutMTcYw4PRkq4P8nveJoa35knBkXLp/fGh531JDlmofJEZX3dKKrYeKour9zXScVR729nu4KumOOwj78hpR2xoNlBXEwxWWl5ftaH/Rc2QjPlcWygjgQB+JAHIgDxIE4EAfiQByIA3EgDsSBOEAciANxIA7EgTgQB+JAHIiD1nmu7CS3M8JzZbGsIA7EgTgQB+IAcSAOxIE4EAfiQByIA3EgDhAH4kAciANxIA7EgTgQB+IAcTBstujWvgVMDsSBOBAH4kAciANxIA7EAeJAHIgDcSAOxIE4EAfiQBwgDsSBOBAH4kAciANxIA7EgThAHBQ6A/7/TY4WRJrFAAAAAElFTkSuQmCC">
 <link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAIAAADdvvtQAAACUklEQVR42u3cv03DQBTA4RdEkynSZgwGyAgp2MAdYgSULhswhAdgBTrPwBS0SJz4Y99dkufvK4OVWNZP73yy8GY3HAPmunMJEBACQkAICASEgBAQAgIBISAEhIBAQAgIASEgEBACQkAICAGBgBAQAkJAICAEhIAQEAgIASEgBAQCoo77nj/2/jQ0+ua315dG3/zw+Hxz5xwRw8fWBMIShoBAQAgIASEgEBACQkAICAG5BAgIASEgBAQCQkAICAGBgBAQAkJAICAEhIAQEAiIxbq+ncM7NPqcc0TE6WwCYQlDQHAt90BpjVPhw8NeQMxK5+ufsmdkCWtTz7+OMYGk8/vBSUeRCYQJdIW3zN+PGaeUQ8gEWlzPYV8oo/hhxvshAS3z81BZwU5eQM3undexKRNQs/GzjiEkIASEgBAQAqL6lir7szAB1d52rWxTJqCWQyj7+BFQjREyTuUnX8WHHul4mDqroWIxK1u8TCBMoMsuZH+8xUn9NMMEarylyv4szARqNor8VwY1R5ElDATELS9h3qHR55wjImJrAmEJQ0AgIASEgBAQCAgBISAEhIBcAgSEgBAQAgIBISAEhIBAQAgIASEgEBACQkAICATEYl3fzuEdGn3OOSLidDaBsIQhIBAQAkJACAgEhIAQEAJCQC4BAkJACAgBgYAQEAJCQCAgBISAEBAICAEhIAQEAkJAXNZmNxxdBUwgBISAEBAICAEhIAQEAkJACAgBgYAQEAJCQCAgBISAEBACAgEhIASEgEBACAgBISAQEAJCQAgIBEQFn5bBU6rjW/PaAAAAAElFTkSuQmCC">
-<link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22Chess%20post%20mortem%22%2C%22short_name%22%3A%22Post%20mortem%22%2C%22start_url%22%3A%22./%22%2C%22scope%22%3A%22./%22%2C%22display%22%3A%22standalone%22%2C%22orientation%22%3A%22portrait%22%2C%22background_color%22%3A%22%23faf7f1%22%2C%22theme_color%22%3A%22%23faf7f1%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage/png%3Bbase64%2CiVBORw0KGgoAAAANSUhEUgAAAMAAAADACAIAAADdvvtQAAACUklEQVR42u3cv03DQBTA4RdEkynSZgwGyAgp2MAdYgSULhswhAdgBTrPwBS0SJz4Y99dkufvK4OVWNZP73yy8GY3HAPmunMJEBACQkAICASEgBAQAgIBISAEhIBAQAgIASEgEBACQkAICAGBgBAQAkJAICAEhIAQEAgIASEgBAQCoo77nj/2/jQ0%2Bua315dG3/zw%2BHxz5xwRw8fWBMIShoBAQAgIASEgEBACQkAICAG5BAgIASEgBAQCQkAICAGBgBAQAkJAICAEhIAQEAiIxbq%2BncM7NPqcc0TE6WwCYQlDQHAt90BpjVPhw8NeQMxK5%2BufsmdkCWtTz7%2BOMYGk8/vBSUeRCYQJdIW3zN%2BPGaeUQ8gEWlzPYV8oo/hhxvshAS3z81BZwU5eQM3undexKRNQs/GzjiEkIASEgBAQAqL6lir7szAB1d52rWxTJqCWQyj7%2BBFQjREyTuUnX8WHHul4mDqroWIxK1u8TCBMoMsuZH%2B8xUn9NMMEarylyv4szARqNor8VwY1R5ElDATELS9h3qHR55wjImJrAmEJQ0AgIASEgBAQCAgBISAEhIBcAgSEgBAQAgIBISAEhIBAQAgIASEgEBACQkAICATEYl3fzuEdGn3OOSLidDaBsIQhIBAQAkJACAgEhIAQEAJCQC4BAkJACAgBgYAQEAJCQCAgBISAEBAICAEhIAQEAkJAXNZmNxxdBUwgBISAEBAICAEhIAQEAkJACAgBgYAQEAJCQCAgBISAEBACAgEhIASEgEBACAgBISAQEAJCQAgIBEQFn5bBU6rjW/PaAAAAAElFTkSuQmCC%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image/png%22%7D%2C%7B%22src%22%3A%22data%3Aimage/png%3Bbase64%2CiVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAIAAAB7GkOtAAAHKUlEQVR42u3dsXGjYBCAUctDoiqUqgwKUAkK6ECZhxIYZeqAIlwALThzDa7CgWecCWwQCHbfS23dnGBmv3/vhL07XM4vAOTz6hIACAAAAgCAAAAgAAAIAAACAIAAACAAAAgAAAIAgAAAIAAACAAAAgCAAAAgAAAIAAACAIAAACAAAAgAAAIAgAAACAAAAgCAAAAgAAAIAAACAIAAACAAAAgAAAIAgAAAIAAACAAAAgCAAAAgAAAIAAACAIAAACAAAAgAAAIAgAAACAAAAgCAAAAgAAAIAAACAIAAACAAAAgAAAIAgAAAIAAACAAAAgCAAAAgAAAIAAACAIAAACAAAAgAAAIAgAAAIAAAAgCAAAAgAAAIAAACAIAAACAAAAgAAAIAgAAAIAAACAAAAgCAAAAgAAAIAAACAIAAACAAAAgAAAIAgAAAIAAAAgCAAACQRuESDPp4u%2BR5s13b5HmzZVW7s1FdvvZmlw0AAAEAQAAAEAAAAQBAAAAQAAAEAAABAEAAABAAAAQAAAEAQAAAEAAABAAAAQBAAAAQAAAEAAABAEAAABAAAAQAAAEAQAAAEAAAAQBAAAAQAAAEAAABAEAAABAAAAQAAAEAQAAAEAAABAAAAQBAAAAQAAAEAAABAEAAABAAAAQAAAEAQAAAEAAAAXAJAAQAAAEAQAAAEAAABAAAAQBAAAAQAAAEAAABAEAAABAAAAQAAAEAQAAAEAAABAAAAQBAAAAQAAAEAAABAEAAAAQAAAEAQAAAEAAAgilcgkFd2%2BR5s2VVu7PubATXm9llAwBAAAAQAAAEAEAAABAAAAQAAAEAQAAAEAAABACA7fCzgGB%2B7599Xz0dXSEEANIM/XvfKQYIAKQY/fdeKwMIACQa/TKAAEDq0S8DLMingGCV03%2BZPxwbALDq6WwVwAYAGae/VQABgNTTXwMQAMg7/TUAAYC8018DEAAABABSnr4tAQgA5B27GsBkngOARdz7FL85jg0Awh7/T8e%2BZ7j6v2oJwAYAoU79977TQMcGABGO/yPO9SNeohkIAGz17P%2BoF4IAwPOP/xOH%2BH9fbglAAGDbZ397AAIAgABAyuO/JQABgFXYxL%2Bw%2B28ABACCHP8tAQgAAAIAgAAAIAAACAAAAgCAAAAgADCzhz%2BN5fEuBACeaRNPY3lkDAGAOEuA4z8CAIAAQJolwPEfAYBVWPhXdC38C8gQAGAVe4CzPwIA214Cxo3yES9x/GeCwiWAefeAv8xoB39sABBqCfgd7j3zvf%2Brjv/YACDINgA2AMi1BIT/yyAAoAGmPwIAgACAJcDxHwEADTD9EQDQANMfAQANMP15Bs8BwOShPPdn/I1%2BbACQcRUw/bEBQLpVwOhHACBdBox%2BBADSZcDoRwAgSAZ%2B9MfA0EcAIEUMYDV8CghAAAAQAAAEAAABAEAAABAAAAQAAAEAQAAAWCM/CmJYWdV53mzXNu6sOxvC3uyyAQAgAAAIAAACACAAAAgAAAIAgAAAIAAACAAAAgCAAAAgAAAIAAACAIAAACAAAAgAAAIAgAAAIAAACAAAAgCAAAAgAAAIAAACACAAAAgAAAIAgAAAIAAACAAAAgCAAAAgAAAIAAACAIAAACAAAAgAAAIAgAAAIAAACAAAAgCAAAAgAAAIAAACACAALgGAAAAgAAAIAAACAIAAACAAAAgAAAIAgAAAIAAACAAAAgCAAAAgAAAIAAACAIAAACAAAAgAAAIAgAAAIAAACACAAAAgAAAIAAACAEAwhUswqGubPG%2B2rGp31p2N4Hozu2wAAAgAAAIAgAAACAAAAgCAAAAgAAAIAAACAIAAACAAAAgAAAIAgAAAIAAACAAAAgCAAAAgAAAIAAACAIAAACAAAAgAAAIAgAAACAAAAgCAAAAgAAAIAAACAIAAACAAAAgAAAIAgAAAIAAACAAAAgCAAAAgAAAIAAACAIAAACAAAAgAAAIAgAAACIBLACAAAAgAAAIAgAAAIAAACAAAAgCAAAAgAAAIAAACAIAAACAAAAgAAAIAgAAAIAAACAAAAgCAAAAgAAAIAAACACAAAAgAAAIAgAAAIAAARLA7XM6uAoANAAABAEAAABAAAAQAAAEAQAAAEAAABAAAAQBAAAAQAAAEAAABAEAAABAAAAQAAAEAQAAAEAAABAAAAQBAAAAEAAABAEAAABAAAAQAAAEAQAAAEAAABAAAAQBAAAAQAAAEAAABAEAAABAAAAQAAAEAQAAAEAAABAAAAQBAAAAEAAABAEAAABAAAAQAAAEAQAAAEAAABAAAAQBAAAAQAAAEAAABAEAAABAAAAQAAAEAQAAAEAAABAAAAQBAAAAQAAABAEAAABAAAAQAAAEAQAAAEAAABAAAAQBAAAAQAAAEAAABAEAAABAAAAQAAAEAQAAAEAAABAAAAQBAAAAQAAABAEAAABAAAAQAgGi%2BAU94mDpT%2BEx6AAAAAElFTkSuQmCC%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image/png%22%2C%22purpose%22%3A%22any%20maskable%22%7D%5D%7D">
+<link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22Chess%20post%20mortem%22%2C%22short_name%22%3A%22Post%20mortem%22%2C%22start_url%22%3A%22./%22%2C%22scope%22%3A%22./%22%2C%22display%22%3A%22standalone%22%2C%22orientation%22%3A%22portrait%22%2C%22background_color%22%3A%22%23f5f0e4%22%2C%22theme_color%22%3A%22%23f5f0e4%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage/png%3Bbase64%2CiVBORw0KGgoAAAANSUhEUgAAAMAAAADACAIAAADdvvtQAAACUklEQVR42u3cv03DQBTA4RdEkynSZgwGyAgp2MAdYgSULhswhAdgBTrPwBS0SJz4Y99dkufvK4OVWNZP73yy8GY3HAPmunMJEBACQkAICASEgBAQAgIBISAEhIBAQAgIASEgEBACQkAICAGBgBAQAkJAICAEhIAQEAgIASEgBAQCoo77nj/2/jQ0%2Bua315dG3/zw%2BHxz5xwRw8fWBMIShoBAQAgIASEgEBACQkAICAG5BAgIASEgBAQCQkAICAGBgBAQAkJAICAEhIAQEAiIxbq%2BncM7NPqcc0TE6WwCYQlDQHAt90BpjVPhw8NeQMxK5%2BufsmdkCWtTz7%2BOMYGk8/vBSUeRCYQJdIW3zN%2BPGaeUQ8gEWlzPYV8oo/hhxvshAS3z81BZwU5eQM3undexKRNQs/GzjiEkIASEgBAQAqL6lir7szAB1d52rWxTJqCWQyj7%2BBFQjREyTuUnX8WHHul4mDqroWIxK1u8TCBMoMsuZH%2B8xUn9NMMEarylyv4szARqNor8VwY1R5ElDATELS9h3qHR55wjImJrAmEJQ0AgIASEgBAQCAgBISAEhIBcAgSEgBAQAgIBISAEhIBAQAgIASEgEBACQkAICATEYl3fzuEdGn3OOSLidDaBsIQhIBAQAkJACAgEhIAQEAJCQC4BAkJACAgBgYAQEAJCQCAgBISAEBAICAEhIAQEAkJAXNZmNxxdBUwgBISAEBAICAEhIAQEAkJACAgBgYAQEAJCQCAgBISAEBACAgEhIASEgEBACAgBISAQEAJCQAgIBEQFn5bBU6rjW/PaAAAAAElFTkSuQmCC%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image/png%22%7D%2C%7B%22src%22%3A%22data%3Aimage/png%3Bbase64%2CiVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAIAAAB7GkOtAAAHKUlEQVR42u3dsXGjYBCAUctDoiqUqgwKUAkK6ECZhxIYZeqAIlwALThzDa7CgWecCWwQCHbfS23dnGBmv3/vhL07XM4vAOTz6hIACAAAAgCAAAAgAAAIAAACAIAAACAAAAgAAAIAgAAAIAAACAAAAgCAAAAgAAAIAAACAIAAACAAAAgAAAIAgAAACAAAAgCAAAAgAAAIAAACAIAAACAAAAgAAAIAgAAAIAAACAAAAgCAAAAgAAAIAAACAIAAACAAAAgAAAIAgAAACAAAAgCAAAAgAAAIAAACAIAAACAAAAgAAAIAgAAAIAAACAAAAgCAAAAgAAAIAAACAIAAACAAAAgAAAIAgAAAIAAAAgCAAAAgAAAIAAACAIAAACAAAAgAAAIAgAAAIAAACAAAAgCAAAAgAAAIAAACAIAAACAAAAgAAAIAgAAAIAAAAgCAAACQRuESDPp4u%2BR5s13b5HmzZVW7s1FdvvZmlw0AAAEAQAAAEAAAAQBAAAAQAAAEAAABAEAAABAAAAQAAAEAQAAAEAAABAAAAQBAAAAQAAAEAAABAEAAABAAAAQAAAEAQAAAEAAAAQBAAAAQAAAEAAABAEAAABAAAAQAAAEAQAAAEAAABAAAAQBAAAAQAAAEAAABAEAAABAAAAQAAAEAQAAAEAAAAXAJAAQAAAEAQAAAEAAABAAAAQBAAAAQAAAEAAABAEAAABAAAAQAAAEAQAAAEAAABAAAAQBAAAAQAAAEAAABAEAAAAQAAAEAQAAAEAAAgilcgkFd2%2BR5s2VVu7PubATXm9llAwBAAAAQAAAEAEAAABAAAAQAAAEAQAAAEAAABACA7fCzgGB%2B7599Xz0dXSEEANIM/XvfKQYIAKQY/fdeKwMIACQa/TKAAEDq0S8DLMingGCV03%2BZPxwbALDq6WwVwAYAGae/VQABgNTTXwMQAMg7/TUAAYC8018DEAAABABSnr4tAQgA5B27GsBkngOARdz7FL85jg0Awh7/T8e%2BZ7j6v2oJwAYAoU79977TQMcGABGO/yPO9SNeohkIAGz17P%2BoF4IAwPOP/xOH%2BH9fbglAAGDbZ397AAIAgABAyuO/JQABgFXYxL%2Bw%2B28ABACCHP8tAQgAAAIAgAAAIAAACAAAAgCAAAAgADCzhz%2BN5fEuBACeaRNPY3lkDAGAOEuA4z8CAIAAQJolwPEfAYBVWPhXdC38C8gQAGAVe4CzPwIA214Cxo3yES9x/GeCwiWAefeAv8xoB39sABBqCfgd7j3zvf%2Brjv/YACDINgA2AMi1BIT/yyAAoAGmPwIAgACAJcDxHwEADTD9EQDQANMfAQANMP15Bs8BwOShPPdn/I1%2BbACQcRUw/bEBQLpVwOhHACBdBox%2BBADSZcDoRwAgSAZ%2B9MfA0EcAIEUMYDV8CghAAAAQAAAEAAABAEAAABAAAAQAAAEAQAAAWCM/CmJYWdV53mzXNu6sOxvC3uyyAQAgAAAIAAACACAAAAgAAAIAgAAAIAAACAAAAgCAAAAgAAAIAAACAIAAACAAAAgAAAIAgAAAIAAACAAAAgCAAAAgAAAIAAACACAAAAgAAAIAgAAAIAAACAAAAgCAAAAgAAAIAAACAIAAACAAAAgAAAIAgAAAIAAACAAAAgCAAAAgAAAIAAACACAALgGAAAAgAAAIAAACAIAAACAAAAgAAAIAgAAAIAAACAAAAgCAAAAgAAAIAAACAIAAACAAAAgAAAIAgAAAIAAACACAAAAgAAAIAAACAEAwhUswqGubPG%2B2rGp31p2N4Hozu2wAAAgAAAIAgAAACAAAAgCAAAAgAAAIAAACAIAAACAAAAgAAAIAgAAAIAAACAAAAgCAAAAgAAAIAAACAIAAACAAAAgAAAIAgAAACAAAAgCAAAAgAAAIAAACAIAAACAAAAgAAAIAgAAAIAAACAAAAgCAAAAgAAAIAAACAIAAACAAAAgAAAIAgAAACIBLACAAAAgAAAIAgAAAIAAACAAAAgCAAAAgAAAIAAACAIAAACAAAAgAAAIAgAAAIAAACAAAAgCAAAAgAAAIAAACACAAAAgAAAIAgAAAIAAARLA7XM6uAoANAAABAEAAABAAAAQAAAEAQAAAEAAABAAAAQBAAAAQAAAEAAABAEAAABAAAAQAAAEAQAAAEAAABAAAAQBAAAAEAAABAEAAABAAAAQAAAEAQAAAEAAABAAAAQBAAAAQAAAEAAABAEAAABAAAAQAAAEAQAAAEAAABAAAAQBAAAAEAAABAEAAABAAAAQAAAEAQAAAEAAABAAAAQBAAAAQAAAEAAABAEAAABAAAAQAAAEAQAAAEAAABAAAAQBAAAAQAAABAEAAABAAAAQAAAEAQAAAEAAABAAAAQBAAAAQAAAEAAABAEAAABAAAAQAAAEAQAAAEAAABAAAAQBAAAAQAAABAEAAABAAAAQAgGi%2BAU94mDpT%2BEx6AAAAAElFTkSuQmCC%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image/png%22%2C%22purpose%22%3A%22any%20maskable%22%7D%5D%7D">
 <style>
+/* ============================================================
+   Chess post mortem
+   Palette taken from a club tournament board: green vinyl and
+   buff squares, ebony ink, a brass clock, and the red pen a
+   coach marks a score sheet with. Notation is monospaced,
+   because that is how notation is written.
+   ============================================================ */
+
+:root{
+  --paper:#f5f0e4;         /* buff, the light square */
+  --paper2:#efe9da;
+  --card:#fffdf7;
+  --ink:#1d2119;           /* ebony */
+  --soft:#5c5f52;
+  --faint:#87897a;
+  --line:#e2dbc8;
+  --hair:#ece6d6;
+  --green:#3d6b4f;         /* tournament vinyl */
+  --green-d:#2f5540;
+  --green-t:#e9f0e8;
+  --board-d:#7c9a63;
+  --board-l:#e9e2c8;
+  --brass:#b8874b;
+  --brass-t:#f8efdd;
+  --blood:#a63d34;
+  --blood-t:#faeae7;
+  --violet:#6b4f8f;
+  --violet-t:#f0ebf7;
+  --shadow:27,33,25;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,monospace;
+}
+:root[data-theme="dark"]{
+  --paper:#15180f;
+  --paper2:#1b1f16;
+  --card:#20241a;
+  --ink:#eee9d9;
+  --soft:#b0b3a2;
+  --faint:#8b8e7c;
+  --line:#333829;
+  --hair:#2b3022;
+  --green:#7fae87;
+  --green-d:#6d9a75;
+  --green-t:#1f2c22;
+  --brass:#d5a761;
+  --brass-t:#2c2517;
+  --blood:#d97a6e;
+  --blood-t:#2e1e1a;
+  --violet:#a98cc9;
+  --violet-t:#241d2e;
+  --shadow:0,0,0;
+}
+
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-:root{--paper:#faf7f1;--card:#fff;--ink:#1b1917;--soft:#6f6759;--faint:#9d9484;
-  --line:#e6dfd1;--good:#1f6f5c;--watch:#b47617;--bad:#b0392b;--purple:#6b3fa0}
 html{background:var(--paper)}
-body{margin:0;background:var(--paper);color:var(--ink);
-  font:400 16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif;
-  -webkit-font-smoothing:antialiased;overscroll-behavior-y:none;
-  padding-bottom:calc(86px + env(safe-area-inset-bottom))}
+body{
+  margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);
+  font-size:16px;line-height:1.45;-webkit-font-smoothing:antialiased;
+  overscroll-behavior-y:none;padding-bottom:calc(88px + env(safe-area-inset-bottom));
+}
 .w{max-width:560px;margin:0 auto;padding:0 16px}
-.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
 .grow{flex:1}
 .mid{text-align:center}
-.good{color:var(--good)}.bad{color:var(--bad)}.watch{color:var(--watch)}
-.fix{color:var(--bad)}.faint{color:var(--faint)}.acc{color:var(--good)}
+.good{color:var(--green)}.bad{color:var(--blood)}.watch{color:var(--brass)}
+.fix{color:var(--blood)}.faint{color:var(--faint)}.acc{color:var(--green)}
 
-header{background:var(--card);border-bottom:1px solid var(--line);
-  padding:calc(11px + env(safe-area-inset-top)) 0 11px;position:sticky;top:0;z-index:20}
-h1{font-size:18px;font-weight:700;letter-spacing:-.02em;margin:0}
-.htitle{font-size:16px;font-weight:600;flex:1;text-align:center}
-.hspace{width:56px}
+/* ---- the signature: a strip of board ---- */
+.checker{height:6px;display:block;background:
+  repeating-linear-gradient(90deg,var(--board-d) 0 6px,var(--board-l) 6px 12px)}
+.checker.thin{height:4px;background:
+  repeating-linear-gradient(90deg,var(--board-d) 0 4px,var(--board-l) 4px 8px)}
+
+/* ---- header ---- */
+header{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--card) 92%,transparent);
+  -webkit-backdrop-filter:saturate(180%) blur(12px);backdrop-filter:saturate(180%) blur(12px)}
+.hbar{display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:calc(10px + env(safe-area-inset-top)) 16px 10px;max-width:560px;margin:0 auto}
+h1{font-size:17px;font-weight:700;letter-spacing:-.02em;margin:0}
+.hsub{font-family:var(--mono);font-size:11px;color:var(--faint);letter-spacing:.02em;margin-top:2px}
+.htitle{font-size:15.5px;font-weight:650;flex:1;text-align:center;letter-spacing:-.01em}
+.hspace{width:60px}
 .hbtns{display:flex;gap:7px}
-main{padding-top:14px}
+main{padding-top:16px}
 
-.h2{font-size:19px;font-weight:700;letter-spacing:-.02em;line-height:1.25;margin:5px 0 0}
-.h3{font-size:15.5px;font-weight:600;margin:2px 0 0}
-.kick{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
-p{font-size:14.5px;line-height:1.55;color:var(--soft);margin:8px 0 0}
-p.nm{margin-top:6px}
-.pagelead{margin:0 4px 12px;font-size:14px}
-.tiny{font-size:12.5px;line-height:1.5;color:var(--faint);margin-top:6px}
-.tiny.pad{padding:2px 4px 10px}
-.bullet{padding-left:14px;position:relative}
-.bullet:before{content:"";position:absolute;left:0;top:9px;width:5px;height:5px;
-  border-radius:50%;background:var(--good)}
+/* ---- type ---- */
+.h2{font-size:21px;font-weight:700;letter-spacing:-.028em;line-height:1.2;margin:6px 0 0}
+.h3{font-size:15.5px;font-weight:650;letter-spacing:-.012em;margin:0;line-height:1.35}
+.kick{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--faint)}
+p{font-size:14.5px;line-height:1.6;color:var(--soft);margin:9px 0 0}
+p.nm{margin-top:7px}
+.pagelead{margin:0 4px 14px;font-size:14px;color:var(--soft)}
+.tiny{font-size:12.5px;line-height:1.55;color:var(--faint);margin-top:7px}
+.tiny.pad{padding:2px 4px 12px}
+.big{font-size:27px;font-weight:700;letter-spacing:-.03em}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:33px;font-weight:600;
+  letter-spacing:-.045em;line-height:1}
+.num em{font-size:15px;font-style:normal;color:var(--faint);margin-right:3px;letter-spacing:0}
 .story{font-size:13.5px}
-.where{font-family:ui-monospace,Menlo,monospace;font-size:12.5px;color:var(--good);margin-top:4px}
+.where{font-family:var(--mono);font-size:12.5px;color:var(--green);margin-top:5px;letter-spacing:-.01em}
+.bullet{padding-left:15px;position:relative}
+.bullet:before{content:"";position:absolute;left:0;top:9px;width:6px;height:6px;background:var(--board-d)}
 
-.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:15px;margin-bottom:10px}
-.card.focus{background:#f2f8f5;border-color:#cfe0d9}
-.card.win{background:#f5faf7;border-color:#d8e8e1}
-.card.warn{background:#fbf0dd;border-color:#eadcc0}
-.card.flagcard{background:#fdf7f6;border-color:#eccec8}
-.card.list{display:block;width:100%;text-align:left;cursor:pointer;font:inherit;color:inherit}
-.between{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
-.row{display:flex;gap:8px;margin-top:10px}
-.num{font-size:34px;font-weight:700;letter-spacing:-.03em;line-height:1}
-.num em{font-size:17px;font-style:normal;color:var(--faint);margin-right:3px}
-.big{font-size:26px;font-weight:700;letter-spacing:-.02em}
+/* ---- cards ---- */
+.card{background:var(--card);border-radius:15px;padding:16px;margin-bottom:10px;
+  box-shadow:0 1px 2px rgba(var(--shadow),.05),0 4px 14px -6px rgba(var(--shadow),.09)}
+.card.focus{background:linear-gradient(168deg,var(--green-t),var(--card) 68%);
+  box-shadow:0 1px 2px rgba(var(--shadow),.06),0 6px 20px -8px rgba(var(--shadow),.14);
+  position:relative;overflow:hidden;padding-top:20px}
+.card.focus:before{content:"";position:absolute;top:0;left:0;right:0;height:5px;
+  background:repeating-linear-gradient(90deg,var(--board-d) 0 5px,var(--board-l) 5px 10px)}
+.card.win{background:var(--green-t)}
+.card.warn{background:var(--brass-t)}
+.card.flagcard{background:var(--blood-t)}
+.card.list{display:block;width:100%;text-align:left;cursor:pointer;font:inherit;color:inherit;
+  border:0;transition:transform .12s ease,box-shadow .12s ease}
+.card.list:active{transform:scale(.988);box-shadow:0 1px 2px rgba(var(--shadow),.05)}
+.between{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.row{display:flex;gap:8px;margin-top:12px}
 
-.btn{font:600 15px/1 inherit;font-family:inherit;border:1px solid var(--line);background:var(--card);
-  color:var(--ink);padding:13px 15px;border-radius:11px;cursor:pointer}
-.btn.pri{background:var(--good);border-color:var(--good);color:#fff}
-.btn.pri[disabled],.btn[disabled]{opacity:.45}
-.btn.sm{padding:9px 12px;font-size:13.5px}
-.btn.wide{width:100%;margin-top:11px}
-.btn:active{transform:scale(.99)}
-button:focus-visible{outline:2px solid var(--good);outline-offset:2px}
-.lnk{background:none;border:0;color:var(--good);font:600 13.5px/1.5 inherit;font-family:inherit;
-  padding:8px 4px 0;cursor:pointer;text-decoration:underline}
-.lnk.mid{display:block;margin:12px auto 0}
-.chip{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;
-  padding:4px 9px;border-radius:20px;white-space:nowrap;background:#f0ebe0;color:var(--soft)}
-.chip.good{background:#e6f1ed;color:var(--good)}
-.chip.watch{background:#fbf0dd;color:var(--watch)}
-.chip.bad{background:#f8e7e4;color:var(--bad)}
-.chip.purple{background:#efe8f8;color:var(--purple)}
-.tipn{width:22px;height:22px;border-radius:50%;background:var(--good);color:#fff;font-size:12px;
-  font-weight:700;display:flex;align-items:center;justify-content:center;margin-bottom:8px}
+/* ---- controls ---- */
+.btn{font-family:var(--sans);font-size:15px;font-weight:600;letter-spacing:-.01em;
+  border:1px solid var(--line);background:var(--card);color:var(--ink);
+  padding:13px 16px;border-radius:11px;cursor:pointer;min-height:46px;
+  transition:transform .1s ease,filter .1s ease}
+.btn.pri{border-color:transparent;color:#fff;
+  background:linear-gradient(180deg,var(--green),var(--green-d));
+  box-shadow:0 1px 2px rgba(var(--shadow),.14),inset 0 1px 0 rgba(255,255,255,.14)}
+:root[data-theme="dark"] .btn.pri{color:#12160e}
+.btn:active{transform:scale(.985);filter:brightness(.97)}
+.btn[disabled]{opacity:.4}
+.btn.sm{padding:9px 13px;font-size:13.5px;min-height:38px}
+.btn.wide{width:100%;margin-top:12px}
+button:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+.lnk{background:none;border:0;color:var(--green);font-family:var(--sans);font-size:13.5px;
+  font-weight:600;padding:8px 4px 0;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+.lnk.mid{display:block;margin:14px auto 0}
 
+.chip{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:10px;
+  font-weight:600;letter-spacing:.09em;text-transform:uppercase;padding:5px 9px;border-radius:6px;
+  white-space:nowrap;background:var(--hair);color:var(--soft)}
+.chip:before{content:"";width:5px;height:5px;background:currentColor;opacity:.85}
+.chip.good{background:var(--green-t);color:var(--green)}
+.chip.watch{background:var(--brass-t);color:var(--brass)}
+.chip.bad{background:var(--blood-t);color:var(--blood)}
+.chip.purple{background:var(--violet-t);color:var(--violet)}
+.tipn{width:22px;height:22px;background:var(--board-d);color:#fff;font-family:var(--mono);
+  font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-bottom:10px}
+
+/* ---- home ---- */
 .pills3{display:flex;gap:8px;margin-bottom:10px}
-.pill3{flex:1;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 8px;
-  display:flex;flex-direction:column;gap:3px;align-items:center;cursor:pointer;font-family:inherit}
-.pill3 b{font-size:20px;font-weight:700;letter-spacing:-.02em}
-.pill3 span{font-size:10.5px;color:var(--faint);text-align:center;line-height:1.25}
-.pill3.fix b{color:var(--bad)}.pill3.watch b{color:var(--watch)}.pill3.good b{color:var(--good)}
+.pill3{flex:1;background:var(--card);border:0;border-radius:13px;padding:0 8px 12px;
+  display:flex;flex-direction:column;gap:4px;align-items:center;cursor:pointer;overflow:hidden;
+  font-family:var(--sans);box-shadow:0 1px 2px rgba(var(--shadow),.05),0 4px 14px -6px rgba(var(--shadow),.09);
+  transition:transform .12s ease}
+.pill3:active{transform:scale(.98)}
+.pill3:before{content:"";display:block;width:100%;height:3px;background:var(--faint);margin-bottom:11px}
+.pill3.fix:before{background:var(--blood)}
+.pill3.watch:before{background:var(--brass)}
+.pill3.good:before{background:var(--green)}
+.pill3 b{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:19px;font-weight:600;
+  letter-spacing:-.04em}
+.pill3.fix b{color:var(--blood)}.pill3.watch b{color:var(--brass)}.pill3.good b{color:var(--green)}
+.pill3 span{font-size:10.5px;color:var(--faint);text-align:center;line-height:1.3}
 
-.menu{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.menu{background:var(--card);border-radius:15px;overflow:hidden;
+  box-shadow:0 1px 2px rgba(var(--shadow),.05),0 4px 14px -6px rgba(var(--shadow),.09)}
 .mrow{display:flex;width:100%;align-items:center;justify-content:space-between;gap:10px;
-  padding:15px;background:none;border:0;border-bottom:1px solid var(--line);
-  font:500 15px/1.3 inherit;font-family:inherit;color:var(--ink);cursor:pointer;text-align:left}
-.mrow:last-child{border-bottom:0}
-.mrow i{font-style:normal;color:var(--faint);font-size:19px}
+  padding:15px 16px;background:none;border:0;font-family:var(--sans);font-size:15px;
+  font-weight:500;color:var(--ink);cursor:pointer;text-align:left;position:relative}
+.mrow+.mrow:before{content:"";position:absolute;top:0;left:16px;right:0;height:1px;background:var(--hair)}
+.mrow:active{background:var(--paper2)}
+.mrow i{font-style:normal;color:var(--faint);font-size:17px}
 .srow,.arow{display:flex;align-items:center;justify-content:space-between;gap:12px}
-.orow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;
-  border-bottom:1px solid #f2ede3;font-size:14.5px}
+.orow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 0;
+  border-bottom:1px solid var(--hair);font-size:14.5px}
 .orow:last-of-type{border-bottom:0}
-.gl{padding:9px 0;border-bottom:1px solid #f2ede3}
+.gl{padding:10px 0;border-bottom:1px solid var(--hair)}
 .gl:last-child{border-bottom:0}
-.foot{color:var(--faint);font-size:12.5px;padding:16px 4px;line-height:1.9}
+.gl b{font-size:14.5px;font-weight:650}
+.foot{color:var(--faint);font-size:12.5px;padding:18px 4px;line-height:1.9}
 
-.filters{margin-bottom:6px}
-.frow{display:flex;gap:7px;margin-bottom:7px;overflow-x:auto;padding-bottom:2px}
+/* ---- filters ---- */
+.filters{margin-bottom:8px}
+.frow{display:flex;gap:7px;margin-bottom:8px;overflow-x:auto;padding-bottom:2px;
+  scrollbar-width:none}
+.frow::-webkit-scrollbar{display:none}
 .fchip{flex:0 0 auto;border:1px solid var(--line);background:var(--card);color:var(--soft);
-  border-radius:20px;padding:8px 13px;font:600 12.5px/1 inherit;font-family:inherit;cursor:pointer}
-.fchip.on{background:var(--good);border-color:var(--good);color:#fff}
+  border-radius:8px;padding:8px 13px;font-family:var(--mono);font-size:11.5px;font-weight:600;
+  letter-spacing:.04em;cursor:pointer;text-transform:lowercase}
+.fchip.on{background:var(--green);border-color:var(--green);color:#fff}
+:root[data-theme="dark"] .fchip.on{color:#12160e}
 
-/* ---------------- board ---------------- */
-.boardbox{max-width:400px;margin:12px auto 0}
-svg.board{display:block;width:100%;height:auto;border-radius:10px;
-  box-shadow:0 1px 4px rgba(27,25,23,.14);touch-action:pan-y}
-.sl{fill:#f1e6cd}
-.sd{fill:#a9835a}
-.hlast{fill:#b47617;opacity:.34}
-.hsel{fill:#1f6f5c;opacity:.3}
-.pw{fill:#fffbf3;stroke:#2b241b;stroke-width:1.3;stroke-linejoin:round}
-.pb{fill:#282219;stroke:#100d09;stroke-width:1.3;stroke-linejoin:round}
-.pw .eye{fill:#2b241b;stroke:none}
-.pb .eye{fill:#e8dcc3;stroke:none}
-.ring{fill:none;stroke:#b0392b;stroke-width:.07}
-.ring.green{stroke:#1f6f5c}
-.ring.purple{stroke:#6b3fa0}
-.tdot{fill:#1f6f5c;opacity:.5}
-.tcap{fill:none;stroke:#1f6f5c;stroke-width:.09;opacity:.65}
-.adot{opacity:.9}
-.adot.aw{fill:#fffbf3;stroke:#2b241b;stroke-width:.03}
-.adot.ab{fill:#282219;stroke:#e8dcc3;stroke-width:.03}
-.cr{font-size:.17px;font-weight:600;font-family:ui-monospace,Menlo,monospace}
-.cr.cl{fill:#a9835a}
-.cr.cd{fill:#f1e6cd}
-.arw{stroke:#b0392b;stroke-width:.16;stroke-linecap:round;opacity:.9}
-.arw.green{stroke:#1f6f5c}
-.arw.purple{stroke:#6b3fa0}
-.arh{fill:#b0392b}
-.arh.green{fill:#1f6f5c}
-.arh.purple{fill:#6b3fa0}
+/* ============================================================
+   The board
+   ============================================================ */
+.boardbox{max-width:400px;margin:14px auto 0;border-radius:6px;overflow:hidden;
+  box-shadow:0 2px 4px rgba(var(--shadow),.1),0 12px 30px -14px rgba(var(--shadow),.35)}
+svg.board{display:block;width:100%;height:auto;touch-action:pan-y}
+.sl{fill:#e9e2c8}
+.sd{fill:#7c9a63}
+:root[data-theme="dark"] .sl{fill:#d9d2b8}
+:root[data-theme="dark"] .sd{fill:#6c8a55}
+.hlast{fill:#e8c04a;opacity:.45}
+.hsel{fill:#2f5540;opacity:.35}
+.pw{fill:#fffdf6;stroke:#23281d;stroke-width:1.35;stroke-linejoin:round}
+.pb{fill:#23281d;stroke:#0d100a;stroke-width:1.35;stroke-linejoin:round}
+.pw .eye{fill:#23281d;stroke:none}
+.pb .eye{fill:#e9e2c8;stroke:none}
+.ring{fill:none;stroke:#a63d34;stroke-width:.075}
+.ring.green{stroke:#1f5c3a}
+.ring.purple{stroke:#6b4f8f}
+.tdot{fill:#2f5540;opacity:.5}
+.tcap{fill:none;stroke:#2f5540;stroke-width:.09;opacity:.7}
+.adot.aw{fill:#fffdf6;stroke:#23281d;stroke-width:.03}
+.adot.ab{fill:#23281d;stroke:#e9e2c8;stroke-width:.03}
+.cr{font-family:var(--mono);font-size:.16px;font-weight:600}
+.cr.cl{fill:#7c9a63}
+.cr.cd{fill:#e9e2c8}
+.arw{stroke:#a63d34;stroke-width:.17;stroke-linecap:round;opacity:.92}
+.arw.green{stroke:#1f5c3a}
+.arw.purple{stroke:#6b4f8f}
+.arh{fill:#a63d34}
+.arh.green{fill:#1f5c3a}
+.arh.purple{fill:#6b4f8f}
 
-.matbar{max-width:400px;margin:10px auto 0}
-.mattrack{position:relative;height:8px;border-radius:6px;
-  background:linear-gradient(90deg,#e3c8c3,#f0ebe0 45%,#f0ebe0 55%,#bcd8ce)}
-.mattrack b{position:absolute;left:50%;top:-3px;width:1px;height:14px;background:#cfc6b6}
-.mattrack i{position:absolute;top:-3px;width:12px;height:14px;margin-left:-6px;border-radius:4px;background:var(--ink)}
-.matlab{display:flex;justify-content:space-between;font-size:11.5px;color:var(--faint);margin-top:5px}
-.ctrls{display:flex;gap:7px;margin-top:11px}
+.matbar{max-width:400px;margin:12px auto 0}
+.mattrack{position:relative;height:7px;border-radius:4px;
+  background:linear-gradient(90deg,var(--blood-t),var(--hair) 45%,var(--hair) 55%,var(--green-t))}
+.mattrack b{position:absolute;left:50%;top:-4px;width:1px;height:15px;background:var(--line)}
+.mattrack i{position:absolute;top:-4px;width:11px;height:15px;margin-left:-5.5px;border-radius:3px;
+  background:var(--ink)}
+.matlab{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;
+  color:var(--faint);margin-top:6px;letter-spacing:.02em}
+.ctrls{display:flex;gap:7px;margin-top:12px}
 .ctrls .btn{flex:1;padding:13px 4px;font-size:14px}
-.movelist{display:flex;gap:5px;overflow-x:auto;padding:11px 2px 4px}
-.mvb{flex:0 0 auto;border:1px solid var(--line);background:var(--card);border-radius:8px;padding:7px 9px;
-  font:500 12.5px/1 ui-monospace,Menlo,monospace;color:var(--soft);cursor:pointer}
-.mvb.on{background:var(--ink);color:#fff;border-color:var(--ink)}
-.mvb.flag{border-color:#e2b3ac;color:var(--bad)}
-.mvb.goodm{border-color:#b9d6cb;color:var(--good)}
-.mvb.flag.on,.mvb.goodm.on{color:#fff}
-.inspect{background:var(--card);border:1px solid var(--line);border-radius:11px;padding:11px 13px;
-  margin-top:10px;font-size:13.5px;color:var(--soft)}
-.inspect b{color:var(--ink);font-family:ui-monospace,Menlo,monospace}
+.movelist{display:flex;gap:5px;overflow-x:auto;padding:12px 2px 4px;scrollbar-width:none}
+.movelist::-webkit-scrollbar{display:none}
+.mvb{flex:0 0 auto;border:1px solid var(--line);background:var(--card);border-radius:7px;
+  padding:7px 9px;font-family:var(--mono);font-size:12.5px;font-weight:500;color:var(--soft);cursor:pointer}
+.mvb.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.mvb.flag{border-color:var(--blood);color:var(--blood)}
+.mvb.goodm{border-color:var(--green);color:var(--green)}
+.mvb.flag.on,.mvb.goodm.on{background:var(--ink);color:var(--paper)}
+.inspect{background:var(--card);border-radius:11px;padding:12px 14px;margin-top:11px;
+  font-size:13.5px;color:var(--soft);box-shadow:0 1px 2px rgba(var(--shadow),.05)}
+.inspect b{color:var(--ink);font-family:var(--mono)}
 .inspect .lnk{padding:0;margin-left:6px;font-size:12.5px}
-ul.why{margin:8px 0 0;padding-left:17px}
-ul.why li{font-size:14px;color:var(--soft);line-height:1.5;margin-bottom:4px}
-.bestbox{margin-top:11px;padding:12px;border-radius:11px;background:#f2f8f5;border:1px solid #cfe0d9}
+ul.why{margin:9px 0 0;padding-left:16px;list-style:none}
+ul.why li{font-size:14px;color:var(--soft);line-height:1.55;margin-bottom:6px;position:relative}
+ul.why li:before{content:"";position:absolute;left:-14px;top:8px;width:5px;height:5px;
+  background:var(--board-d)}
+.bestbox{margin-top:12px;padding:13px;border-radius:11px;background:var(--green-t)}
 .vhead{margin-top:2px}
-.vtitle{margin-top:12px}
+.vtitle{margin-top:14px}
 .drillhead{margin-top:4px}
 
-.chart{width:100%;height:84px;display:block;margin-top:8px}
-.axis{display:flex;justify-content:space-between;font-size:11.5px;color:var(--faint);margin-top:3px}
-.radar{width:100%;max-width:290px;display:block;margin:0 auto;overflow:visible}
-.strip{width:100%;height:24px;display:block;margin:8px 0 2px}
-.bar{height:8px;border-radius:6px;background:#f0ebe0;display:flex;overflow:hidden;margin-top:10px}
+/* ---- data ---- */
+.chart{width:100%;height:82px;display:block;margin-top:10px}
+.axis{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;
+  color:var(--faint);margin-top:4px}
+.radar{width:100%;max-width:290px;display:block;margin:2px auto 0;overflow:visible}
+.strip{width:100%;height:24px;display:block;margin:9px 0 3px}
+.bar{height:7px;border-radius:4px;background:var(--hair);display:flex;overflow:hidden;margin-top:11px}
 .bar i{display:block;height:100%}
-.legend{display:flex;gap:14px;justify-content:center;font-size:12px;color:var(--soft);margin-top:8px}
-.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px}
+.legend{display:flex;gap:16px;justify-content:center;font-family:var(--mono);font-size:11px;
+  color:var(--soft);margin-top:10px}
+.legend i{display:inline-block;width:8px;height:8px;margin-right:6px}
 
+/* ---- inputs ---- */
 input,textarea{width:100%;padding:13px;font-size:16px;border:1px solid var(--line);border-radius:11px;
-  background:var(--card);color:var(--ink);font-family:ui-monospace,Menlo,monospace;margin-top:9px}
+  background:var(--card);color:var(--ink);font-family:var(--mono);margin-top:10px}
 textarea{min-height:110px;font-size:13px;resize:vertical}
-input:focus,textarea:focus{outline:2px solid var(--good);outline-offset:1px}
-.url{background:#f4f0e7;border:1px solid var(--line);border-radius:9px;padding:10px 11px;margin-top:10px;
-  word-break:break-all;font-size:12.5px;-webkit-user-select:all;user-select:all}
-.coach{white-space:pre-wrap;font-size:15px;line-height:1.6;color:var(--ink)}
+input:focus,textarea:focus{outline:2px solid var(--green);outline-offset:1px;border-color:transparent}
+.url{background:var(--paper2);border-radius:9px;padding:11px 12px;margin-top:11px;
+  word-break:break-all;font-family:var(--mono);font-size:12.5px;-webkit-user-select:all;user-select:all}
+.coach{white-space:pre-wrap;font-size:15px;line-height:1.65;color:var(--ink)}
 
-.login{padding:12vh 4px 40px;max-width:400px;margin:0 auto}
-.mark{width:62px;height:62px;border-radius:16px;background:var(--good);display:flex;
-  align-items:center;justify-content:center;margin-bottom:18px}
-.marksvg{width:40px;height:40px}
-.lbl{display:block;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
-  color:var(--faint);margin:20px 0 0}
-.lead{font-size:15px;color:var(--soft);line-height:1.5;margin-top:8px}
-.intro{padding:9vh 4px 40px;max-width:440px;margin:0 auto}
-.dots{display:flex;gap:6px;margin-bottom:18px}
-.dots i{width:22px;height:4px;border-radius:2px;background:#e6dfd1}
-.dots i.on{background:var(--good)}
-.introcard{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;margin-bottom:12px}
-.introt{font-size:21px;font-weight:700;letter-spacing:-.02em}
-.pills{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+/* ---- login and intro ---- */
+.login{padding:11vh 4px 40px;max-width:400px;margin:0 auto}
+.mark{width:76px;height:76px;border-radius:14px;overflow:hidden;margin-bottom:22px;
+  box-shadow:0 4px 18px -6px rgba(var(--shadow),.4)}
+.marksvg{display:block;width:100%;height:100%}
+.lbl{display:block;font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--faint);margin:22px 0 0}
+.lead{font-size:15.5px;color:var(--soft);line-height:1.55;margin-top:10px}
+.intro{padding:8vh 4px 40px;max-width:440px;margin:0 auto}
+.dots{display:flex;gap:5px;margin-bottom:20px}
+.dots i{width:26px;height:5px;background:var(--line)}
+.dots i.on{background:var(--board-d)}
+.introcard{background:var(--card);border-radius:16px;padding:22px;margin-bottom:12px;
+  box-shadow:0 1px 2px rgba(var(--shadow),.05),0 8px 26px -12px rgba(var(--shadow),.22)}
+.introt{font-size:22px;font-weight:700;letter-spacing:-.03em;line-height:1.2}
+.pills{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
 
-.working{display:flex;align-items:center;gap:9px;background:#f2f8f5;border:1px solid #cfe0d9;
-  border-radius:11px;padding:11px 13px;margin-top:12px;font-size:13.5px;color:#2f4a42}
-.dot{width:8px;height:8px;border-radius:50%;background:var(--good);animation:pulse 1s ease-in-out infinite}
-@keyframes pulse{0%,100%{opacity:.25}50%{opacity:1}}
-.toast{position:fixed;left:12px;right:12px;bottom:calc(96px + env(safe-area-inset-bottom));
-  background:#1b1917;color:#fff;border-radius:12px;padding:13px 15px;font-size:14px;z-index:40;
-  text-align:center;box-shadow:0 8px 24px rgba(27,25,23,.22)}
-.nav{position:fixed;left:0;right:0;bottom:0;display:flex;z-index:30;background:rgba(255,255,255,.97);
-  border-top:1px solid var(--line);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
-  padding-bottom:env(safe-area-inset-bottom)}
-.nav button{flex:1;border:0;background:none;padding:10px 4px 12px;font:600 11px/1 inherit;
-  font-family:inherit;color:var(--faint);display:flex;flex-direction:column;align-items:center;
-  gap:5px;cursor:pointer}
-.nav button.on{color:var(--good)}
-.nav .g{font-size:18px;line-height:1}
-@media (prefers-reduced-motion:reduce){.btn:active{transform:none}.dot{animation:none}}
+/* ---- status ---- */
+.working{display:flex;align-items:center;gap:10px;background:var(--green-t);border-radius:11px;
+  padding:12px 14px;margin-top:12px;font-family:var(--mono);font-size:12.5px;color:var(--green)}
+.dot{width:7px;height:7px;background:var(--green);animation:pulse 1.1s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.2}50%{opacity:1}}
+.toast{position:fixed;left:14px;right:14px;bottom:calc(98px + env(safe-area-inset-bottom));
+  background:var(--ink);color:var(--paper);border-radius:12px;padding:13px 16px;font-size:14px;
+  z-index:40;text-align:center;box-shadow:0 10px 30px -8px rgba(var(--shadow),.45)}
+
+/* ---- nav ---- */
+.nav{position:fixed;left:0;right:0;bottom:0;display:flex;z-index:30;
+  background:color-mix(in srgb,var(--card) 94%,transparent);
+  -webkit-backdrop-filter:saturate(180%) blur(14px);backdrop-filter:saturate(180%) blur(14px);
+  border-top:1px solid var(--hair);padding-bottom:env(safe-area-inset-bottom)}
+.nav button{flex:1;border:0;background:none;padding:9px 4px 11px;font-family:var(--sans);
+  font-size:10.5px;font-weight:600;color:var(--faint);display:flex;flex-direction:column;
+  align-items:center;gap:5px;cursor:pointer;letter-spacing:.01em}
+.nav .g{font-size:16px;line-height:1;width:34px;height:26px;display:flex;align-items:center;
+  justify-content:center;border-radius:8px;transition:background .15s ease}
+.nav button.on{color:var(--green)}
+.nav button.on .g{background:var(--green-t)}
+
+/* ---- one orchestrated entrance, on screen change only ---- */
+main.enter>*{animation:rise .26s cubic-bezier(.2,.7,.3,1) both}
+main.enter>*:nth-child(1){animation-delay:0ms}
+main.enter>*:nth-child(2){animation-delay:35ms}
+main.enter>*:nth-child(3){animation-delay:70ms}
+main.enter>*:nth-child(4){animation-delay:100ms}
+main.enter>*:nth-child(5){animation-delay:125ms}
+main.enter>*:nth-child(n+6){animation-delay:145ms}
+@keyframes rise{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+
+@media (prefers-reduced-motion:reduce){
+  main.enter>*{animation:none}
+  .btn:active,.card.list:active,.pill3:active{transform:none}
+  .dot{animation:none}
+}
+
+/* ---- grades ---- */
+.accpanel{padding-bottom:14px}
+.accrow{display:flex;align-items:center;gap:14px}
+.accbox{flex:1;text-align:center}
+.accsplit{width:1px;height:42px;background:var(--line)}
+.accnum{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:34px;font-weight:600;
+  letter-spacing:-.045em;line-height:1;color:var(--green)}
+.accnum.them{color:var(--soft)}
+.accnum i{font-size:15px;font-style:normal;opacity:.6;margin-left:1px}
+.gradecounts{display:flex;flex-wrap:wrap;gap:5px 12px;margin-top:12px;font-family:var(--mono);
+  font-size:11px;color:var(--soft)}
+.gc{display:inline-flex;align-items:center;gap:5px}
+i.gd{display:inline-block;width:7px;height:7px;border-radius:50%}
+.gd.brilliant,circle.gd.brilliant{background:#0aa3a3;fill:#0aa3a3}
+.gd.great,circle.gd.great{background:#4b7fc4;fill:#4b7fc4}
+.gd.best,circle.gd.best{background:#5c9e4a;fill:#5c9e4a}
+.gd.good,circle.gd.good{background:#8fa87a;fill:#8fa87a}
+.gd.book,circle.gd.book{background:#a08360;fill:#a08360}
+.gd.inacc,circle.gd.inacc{background:#d3a441;fill:#d3a441}
+.gd.mistake,circle.gd.mistake{background:#d1802f;fill:#d1802f}
+.gd.miss,circle.gd.miss{background:#c05fa8;fill:#c05fa8}
+.gd.blunder,circle.gd.blunder{background:#b0392b;fill:#b0392b}
+.graderow{display:flex;align-items:center;gap:9px;margin-top:11px;flex-wrap:wrap}
+.grade{font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.08em;
+  text-transform:uppercase;padding:5px 10px;border-radius:6px;color:#fff}
+.grade.brilliant{background:#0aa3a3}
+.grade.great{background:#4b7fc4}
+.grade.best{background:#5c9e4a}
+.grade.good{background:#8fa87a}
+.grade.book{background:#a08360}
+.grade.inacc{background:#d3a441;color:#3a2c07}
+.grade.mistake{background:#d1802f}
+.grade.miss{background:#c05fa8}
+.grade.blunder{background:#b0392b}
+.mvb.gr-blunder{border-color:#b0392b;color:#b0392b}
+.mvb.gr-mistake{border-color:#d1802f;color:#d1802f}
+.mvb.gr-miss{border-color:#c05fa8;color:#c05fa8}
+.mvb.gr-inacc{border-color:#d3a441;color:#a37a17}
+.mvb.gr-brilliant{border-color:#0aa3a3;color:#0aa3a3}
+.mvb.gr-great{border-color:#4b7fc4;color:#4b7fc4}
+.mvb.gr-book{border-color:#a08360;color:#a08360}
+.evalgraph{width:100%;height:56px;display:block;margin-top:14px;border-radius:6px;overflow:hidden}
+.evtop{fill:var(--card)}
+.evbot{fill:var(--ink);opacity:.9}
+.evline{fill:none;stroke:var(--green);stroke-width:2}
+.qtrack{height:7px;border-radius:4px;background:var(--hair);overflow:hidden;margin-top:11px}
+.qtrack i{display:block;height:100%;background:var(--green);transition:width .3s ease}
 </style>
 </head>
 <body>
 <div id="app"></div>
 <input id="file" type="file" multiple hidden>
+<script type="text/plain" id="engsrc">
+/* ============================================================
+   ENGINE
+   Numeric board, in place make and unmake, precomputed ray
+   tables. Written for search speed rather than for reading
+   the analysis code that already exists elsewhere in the app.
+
+   Squares: 0 = a8, 63 = h1, so index >> 3 is the rank from the
+   top and index & 7 is the file. Same convention as the rest of
+   the app, so boards can be handed between the two.
+
+   Piece codes: type in the low three bits, colour in bit 3.
+   ============================================================ */
+
+const E_ = 0, E_P = 1, E_N = 2, E_B = 3, E_R = 4, E_Q = 5, E_K = 6, E_BLACK = 8;
+const E_VAL = [0, 100, 320, 330, 500, 900, 20000];
+const E_CHARS = { 1: "P", 2: "N", 3: "B", 4: "R", 5: "Q", 6: "K",
+  9: "p", 10: "n", 11: "b", 12: "r", 13: "q", 14: "k" };
+const E_FROMCHAR = { P: 1, N: 2, B: 3, R: 4, Q: 5, K: 6, p: 9, n: 10, b: 11, r: 12, q: 13, k: 14 };
+
+/* castling rights bits */
+const CR_WK = 1, CR_WQ = 2, CR_BK = 4, CR_BQ = 8;
+
+/* move packing */
+const M_QUIET = 0, M_DOUBLE = 1, M_EP = 2, M_CASTLE = 3, M_PROMO = 4;
+const mkMove = (from, to, flag, promo, cap) =>
+  (from | (to << 6) | (flag << 12) | (promo << 15) | (cap << 19));
+const mFrom = (m) => m & 63;
+const mTo = (m) => (m >> 6) & 63;
+const mFlag = (m) => (m >> 12) & 7;
+const mPromo = (m) => (m >> 15) & 15;
+const mCap = (m) => (m >> 19) & 15;
+
+/* ---------- precomputed geometry ---------- */
+const DIRS = [-8, 8, -1, 1, -9, -7, 7, 9]; // up down left right and the diagonals
+const RAY = [];        // RAY[sq][dir] = Int8Array of squares
+const KNIGHT_T = [];
+const KING_T = [];
+const PAWN_CAP = [[], []]; // [white, black]
+const PAWN_PUSH = [[], []];
+const PAWN_DBL = [[], []];
+
+(function buildTables() {
+  const on = (f, r) => f >= 0 && f < 8 && r >= 0 && r < 8;
+  for (let s = 0; s < 64; s++) {
+    const f = s & 7, r = s >> 3;
+    RAY[s] = [];
+    for (let d = 0; d < 8; d++) {
+      const df = [0, 0, -1, 1, -1, 1, -1, 1][d];
+      const dr = [-1, 1, 0, 0, -1, -1, 1, 1][d];
+      const out = [];
+      let nf = f + df, nr = r + dr;
+      while (on(nf, nr)) { out.push(nr * 8 + nf); nf += df; nr += dr; }
+      RAY[s][d] = Int8Array.from(out);
+    }
+    const kn = [];
+    for (const [df, dr] of [[1, 2], [2, 1], [2, -1], [1, -2], [-1, -2], [-2, -1], [-2, 1], [-1, 2]]) {
+      if (on(f + df, r + dr)) kn.push((r + dr) * 8 + f + df);
+    }
+    KNIGHT_T[s] = Int8Array.from(kn);
+    const kg = [];
+    for (let d = 0; d < 8; d++) {
+      const df = [0, 0, -1, 1, -1, 1, -1, 1][d], dr = [-1, 1, 0, 0, -1, -1, 1, 1][d];
+      if (on(f + df, r + dr)) kg.push((r + dr) * 8 + f + df);
+    }
+    KING_T[s] = Int8Array.from(kg);
+    // white moves toward rank index 0, black toward 7
+    for (const [ci, dr] of [[0, -1], [1, 1]]) {
+      const caps = [];
+      if (on(f - 1, r + dr)) caps.push((r + dr) * 8 + f - 1);
+      if (on(f + 1, r + dr)) caps.push((r + dr) * 8 + f + 1);
+      PAWN_CAP[ci][s] = Int8Array.from(caps);
+      PAWN_PUSH[ci][s] = on(f, r + dr) ? (r + dr) * 8 + f : -1;
+      const start = ci === 0 ? 6 : 1;
+      PAWN_DBL[ci][s] = r === start && on(f, r + 2 * dr) ? (r + 2 * dr) * 8 + f : -1;
+    }
+  }
+})();
+
+/* ---------- zobrist ---------- */
+let Z_PIECE, Z_SIDE_LO, Z_SIDE_HI, Z_CASTLE, Z_EP;
+(function buildZobrist() {
+  let seed = 0x2f6e2b1;
+  const rnd = () => {
+    seed ^= seed << 13; seed |= 0; seed ^= seed >>> 17; seed ^= seed << 5; seed |= 0;
+    return seed >>> 0;
+  };
+  Z_PIECE = [];
+  for (let p = 0; p < 16; p++) {
+    Z_PIECE[p] = { lo: new Int32Array(64), hi: new Int32Array(64) };
+    for (let s = 0; s < 64; s++) { Z_PIECE[p].lo[s] = rnd() | 0; Z_PIECE[p].hi[s] = rnd() | 0; }
+  }
+  Z_SIDE_LO = rnd() | 0; Z_SIDE_HI = rnd() | 0;
+  Z_CASTLE = { lo: new Int32Array(16), hi: new Int32Array(16) };
+  for (let i = 0; i < 16; i++) { Z_CASTLE.lo[i] = rnd() | 0; Z_CASTLE.hi[i] = rnd() | 0; }
+  Z_EP = { lo: new Int32Array(64), hi: new Int32Array(64) };
+  for (let i = 0; i < 64; i++) { Z_EP.lo[i] = rnd() | 0; Z_EP.hi[i] = rnd() | 0; }
+})();
+
+/* ============================================================
+   POSITION
+   ============================================================ */
+function Pos() {
+  this.b = new Int8Array(64);
+  this.side = 0;          // 0 white, 8 black
+  this.cr = 0;
+  this.ep = -1;
+  this.keyLo = 0; this.keyHi = 0;
+  this.kings = [0, 0];
+  this.undo = [];
+  this.undoLo = [];
+  this.undoHi = [];
+  this.ply = 0;
+}
+
+Pos.prototype.rehash = function () {
+  let lo = 0, hi = 0;
+  for (let s = 0; s < 64; s++) {
+    const p = this.b[s];
+    if (p) { lo ^= Z_PIECE[p].lo[s]; hi ^= Z_PIECE[p].hi[s]; }
+  }
+  if (this.side) { lo ^= Z_SIDE_LO; hi ^= Z_SIDE_HI; }
+  lo ^= Z_CASTLE.lo[this.cr]; hi ^= Z_CASTLE.hi[this.cr];
+  if (this.ep >= 0) { lo ^= Z_EP.lo[this.ep]; hi ^= Z_EP.hi[this.ep]; }
+  this.keyLo = lo | 0; this.keyHi = hi | 0;
+};
+
+Pos.prototype.setFEN = function (fen) {
+  this.b.fill(0);
+  const parts = fen.trim().split(/\s+/);
+  let s = 0;
+  for (const ch of parts[0]) {
+    if (ch === "/") continue;
+    if (ch >= "1" && ch <= "8") { s += +ch; continue; }
+    this.b[s] = E_FROMCHAR[ch] || 0;
+    s++;
+  }
+  this.side = parts[1] === "b" ? E_BLACK : 0;
+  this.cr = 0;
+  const c = parts[2] || "-";
+  if (c.includes("K")) this.cr |= CR_WK;
+  if (c.includes("Q")) this.cr |= CR_WQ;
+  if (c.includes("k")) this.cr |= CR_BK;
+  if (c.includes("q")) this.cr |= CR_BQ;
+  this.ep = -1;
+  if (parts[3] && parts[3] !== "-") {
+    this.ep = (8 - +parts[3][1]) * 8 + "abcdefgh".indexOf(parts[3][0]);
+  }
+  for (let i = 0; i < 64; i++) {
+    if (this.b[i] === E_K) this.kings[0] = i;
+    if (this.b[i] === (E_K | E_BLACK)) this.kings[1] = i;
+  }
+  this.undo.length = 0; this.undoLo.length = 0; this.undoHi.length = 0; this.ply = 0;
+  this.rehash();
+  return this;
+};
+
+/* boards elsewhere in the app are 64 char strings, a8 first */
+Pos.prototype.setBoardString = function (str, sideToMove, castling, ep) {
+  this.b.fill(0);
+  for (let i = 0; i < 64; i++) {
+    const ch = str[i];
+    if (ch && ch !== ".") this.b[i] = E_FROMCHAR[ch] || 0;
+  }
+  this.side = sideToMove === "b" ? E_BLACK : 0;
+  this.cr = 0;
+  if (castling) {
+    if (castling.includes("K")) this.cr |= CR_WK;
+    if (castling.includes("Q")) this.cr |= CR_WQ;
+    if (castling.includes("k")) this.cr |= CR_BK;
+    if (castling.includes("q")) this.cr |= CR_BQ;
+  }
+  this.ep = ep == null ? -1 : ep;
+  for (let i = 0; i < 64; i++) {
+    if (this.b[i] === E_K) this.kings[0] = i;
+    if (this.b[i] === (E_K | E_BLACK)) this.kings[1] = i;
+  }
+  this.undo.length = 0; this.undoLo.length = 0; this.undoHi.length = 0; this.ply = 0;
+  this.rehash();
+  return this;
+};
+
+Pos.prototype.fen = function () {
+  let out = "";
+  for (let r = 0; r < 8; r++) {
+    let empty = 0;
+    for (let f = 0; f < 8; f++) {
+      const p = this.b[r * 8 + f];
+      if (!p) { empty++; continue; }
+      if (empty) { out += empty; empty = 0; }
+      out += E_CHARS[p];
+    }
+    if (empty) out += empty;
+    if (r < 7) out += "/";
+  }
+  out += this.side ? " b " : " w ";
+  let c = "";
+  if (this.cr & CR_WK) c += "K";
+  if (this.cr & CR_WQ) c += "Q";
+  if (this.cr & CR_BK) c += "k";
+  if (this.cr & CR_BQ) c += "q";
+  out += c || "-";
+  out += " " + (this.ep >= 0 ? "abcdefgh"[this.ep & 7] + (8 - (this.ep >> 3)) : "-");
+  return out + " 0 1";
+};
+
+/* ---------- attack test ---------- */
+Pos.prototype.attacked = function (sq, byColour) {
+  const b = this.b;
+  // pawns: a white attacker sits on the ray the black pawn captures along
+  const pc = PAWN_CAP[byColour ? 0 : 1][sq];
+  const wantP = E_P | byColour;
+  for (let i = 0; i < pc.length; i++) if (b[pc[i]] === wantP) return true;
+  const kn = KNIGHT_T[sq], wantN = E_N | byColour;
+  for (let i = 0; i < kn.length; i++) if (b[kn[i]] === wantN) return true;
+  const kg = KING_T[sq], wantK = E_K | byColour;
+  for (let i = 0; i < kg.length; i++) if (b[kg[i]] === wantK) return true;
+  const wantR = E_R | byColour, wantQ = E_Q | byColour, wantB = E_B | byColour;
+  for (let d = 0; d < 4; d++) {
+    const ray = RAY[sq][d];
+    for (let i = 0; i < ray.length; i++) {
+      const p = b[ray[i]];
+      if (p) { if (p === wantR || p === wantQ) return true; break; }
+    }
+  }
+  for (let d = 4; d < 8; d++) {
+    const ray = RAY[sq][d];
+    for (let i = 0; i < ray.length; i++) {
+      const p = b[ray[i]];
+      if (p) { if (p === wantB || p === wantQ) return true; break; }
+    }
+  }
+  return false;
+};
+
+Pos.prototype.inCheck = function (colour) {
+  return this.attacked(this.kings[colour ? 1 : 0], colour ? 0 : E_BLACK);
+};
+
+/* ---------- move generation, pseudo legal ---------- */
+Pos.prototype.gen = function (list, capturesOnly) {
+  const b = this.b, me = this.side, them = me ^ E_BLACK;
+  const ci = me ? 1 : 0;
+  let n = 0;
+  for (let s = 0; s < 64; s++) {
+    const p = b[s];
+    if (!p || (p & E_BLACK) !== me) continue;
+    const t = p & 7;
+    if (t === E_P) {
+      const caps = PAWN_CAP[ci][s];
+      const lastRank = me ? 7 : 0;
+      for (let i = 0; i < caps.length; i++) {
+        const to = caps[i], q = b[to];
+        if (q && (q & E_BLACK) === them) {
+          if ((to >> 3) === lastRank) {
+            for (const pr of [E_Q, E_R, E_B, E_N]) list[n++] = mkMove(s, to, M_PROMO, pr, q);
+          } else list[n++] = mkMove(s, to, M_QUIET, 0, q);
+        } else if (to === this.ep && !q) {
+          list[n++] = mkMove(s, to, M_EP, 0, E_P | them);
+        }
+      }
+      if (capturesOnly) {
+        // promotions are forcing enough to search in quiescence
+        const push = PAWN_PUSH[ci][s];
+        if (push >= 0 && !b[push] && (push >> 3) === lastRank) {
+          list[n++] = mkMove(s, push, M_PROMO, E_Q, 0);
+        }
+        continue;
+      }
+      const push = PAWN_PUSH[ci][s];
+      if (push >= 0 && !b[push]) {
+        if ((push >> 3) === lastRank) {
+          for (const pr of [E_Q, E_R, E_B, E_N]) list[n++] = mkMove(s, push, M_PROMO, pr, 0);
+        } else {
+          list[n++] = mkMove(s, push, M_QUIET, 0, 0);
+          const dbl = PAWN_DBL[ci][s];
+          if (dbl >= 0 && !b[dbl]) list[n++] = mkMove(s, dbl, M_DOUBLE, 0, 0);
+        }
+      }
+      continue;
+    }
+    if (t === E_N || t === E_K) {
+      const tbl = t === E_N ? KNIGHT_T[s] : KING_T[s];
+      for (let i = 0; i < tbl.length; i++) {
+        const to = tbl[i], q = b[to];
+        if (q && (q & E_BLACK) === me) continue;
+        if (capturesOnly && !q) continue;
+        list[n++] = mkMove(s, to, M_QUIET, 0, q);
+      }
+      if (t === E_K && !capturesOnly) {
+        const home = me ? 4 : 60;
+        if (s === home) {
+          const kSide = me ? CR_BK : CR_WK, qSide = me ? CR_BQ : CR_WQ;
+          if ((this.cr & kSide) && !b[home + 1] && !b[home + 2]
+            && !this.attacked(home, them) && !this.attacked(home + 1, them)) {
+            list[n++] = mkMove(s, home + 2, M_CASTLE, 0, 0);
+          }
+          if ((this.cr & qSide) && !b[home - 1] && !b[home - 2] && !b[home - 3]
+            && !this.attacked(home, them) && !this.attacked(home - 1, them)) {
+            list[n++] = mkMove(s, home - 2, M_CASTLE, 0, 0);
+          }
+        }
+      }
+      continue;
+    }
+    const dStart = t === E_B ? 4 : 0;
+    const dEnd = t === E_R ? 4 : 8;
+    for (let d = dStart; d < dEnd; d++) {
+      const ray = RAY[s][d];
+      for (let i = 0; i < ray.length; i++) {
+        const to = ray[i], q = b[to];
+        if (!q) { if (!capturesOnly) list[n++] = mkMove(s, to, M_QUIET, 0, 0); continue; }
+        if ((q & E_BLACK) === them) list[n++] = mkMove(s, to, M_QUIET, 0, q);
+        break;
+      }
+    }
+  }
+  return n;
+};
+
+/* ---------- make and unmake, in place ---------- */
+const CR_MASK = new Int8Array(64).fill(15);
+CR_MASK[60] = 15 & ~(CR_WK | CR_WQ);   // e1
+CR_MASK[63] = 15 & ~CR_WK;             // h1
+CR_MASK[56] = 15 & ~CR_WQ;             // a1
+CR_MASK[4] = 15 & ~(CR_BK | CR_BQ);    // e8
+CR_MASK[7] = 15 & ~CR_BK;              // h8
+CR_MASK[0] = 15 & ~CR_BQ;              // a8
+
+Pos.prototype.make = function (m) {
+  const b = this.b, from = mFrom(m), to = mTo(m), flag = mFlag(m);
+  const p = b[from], me = this.side, them = me ^ E_BLACK;
+  this.undo.push(this.cr | ((this.ep + 1) << 4) | (mCap(m) << 12) | (p << 16));
+  this.undoLo.push(this.keyLo); this.undoHi.push(this.keyHi);
+  let lo = this.keyLo, hi = this.keyHi;
+  if (this.ep >= 0) { lo ^= Z_EP.lo[this.ep]; hi ^= Z_EP.hi[this.ep]; }
+  lo ^= Z_CASTLE.lo[this.cr]; hi ^= Z_CASTLE.hi[this.cr];
+
+  // lift the moving piece
+  lo ^= Z_PIECE[p].lo[from]; hi ^= Z_PIECE[p].hi[from];
+  b[from] = 0;
+
+  if (flag === M_EP) {
+    const capSq = me ? to - 8 : to + 8;
+    const cp = b[capSq];
+    lo ^= Z_PIECE[cp].lo[capSq]; hi ^= Z_PIECE[cp].hi[capSq];
+    b[capSq] = 0;
+  } else {
+    const cap = b[to];
+    if (cap) { lo ^= Z_PIECE[cap].lo[to]; hi ^= Z_PIECE[cap].hi[to]; }
+  }
+
+  const placed = flag === M_PROMO ? (mPromo(m) | me) : p;
+  b[to] = placed;
+  lo ^= Z_PIECE[placed].lo[to]; hi ^= Z_PIECE[placed].hi[to];
+
+  if (flag === M_CASTLE) {
+    const rFrom = to > from ? to + 1 : to - 2;
+    const rTo = to > from ? to - 1 : to + 1;
+    const rook = b[rFrom];
+    b[rFrom] = 0; b[rTo] = rook;
+    lo ^= Z_PIECE[rook].lo[rFrom] ^ Z_PIECE[rook].lo[rTo];
+    hi ^= Z_PIECE[rook].hi[rFrom] ^ Z_PIECE[rook].hi[rTo];
+  }
+
+  if ((p & 7) === E_K) this.kings[me ? 1 : 0] = to;
+  this.cr &= CR_MASK[from] & CR_MASK[to];
+  this.ep = flag === M_DOUBLE ? (me ? from + 8 : from - 8) : -1;
+  if (this.ep >= 0) { lo ^= Z_EP.lo[this.ep]; hi ^= Z_EP.hi[this.ep]; }
+  lo ^= Z_CASTLE.lo[this.cr]; hi ^= Z_CASTLE.hi[this.cr];
+  this.side = them;
+  lo ^= Z_SIDE_LO; hi ^= Z_SIDE_HI;
+  this.keyLo = lo | 0; this.keyHi = hi | 0;
+  this.ply++;
+};
+
+Pos.prototype.unmake = function (m) {
+  const b = this.b, from = mFrom(m), to = mTo(m), flag = mFlag(m);
+  const u = this.undo.pop();
+  this.side ^= E_BLACK;
+  const me = this.side, them = me ^ E_BLACK;
+  const orig = (u >> 16) & 15;
+  const cap = (u >> 12) & 15;
+
+  b[from] = orig;
+  b[to] = 0;
+  if (flag === M_EP) {
+    b[me ? to - 8 : to + 8] = E_P | them;
+  } else if (cap) {
+    b[to] = cap;
+  }
+  if (flag === M_CASTLE) {
+    const rFrom = to > from ? to + 1 : to - 2;
+    const rTo = to > from ? to - 1 : to + 1;
+    b[rFrom] = b[rTo]; b[rTo] = 0;
+  }
+  if ((orig & 7) === E_K) this.kings[me ? 1 : 0] = from;
+  this.cr = u & 15;
+  this.ep = ((u >> 4) & 255) - 1;
+  this.keyLo = this.undoLo.pop(); this.keyHi = this.undoHi.pop();
+  this.ply--;
+};
+
+/* ---------- legal move list ---------- */
+Pos.prototype.legalMoves = function () {
+  const list = new Int32Array(256);
+  const n = this.gen(list, false);
+  const out = [];
+  const me = this.side ? 1 : 0;
+  for (let i = 0; i < n; i++) {
+    this.make(list[i]);
+    if (!this.attacked(this.kings[me], this.side)) out.push(list[i]);
+    this.unmake(list[i]);
+  }
+  return out;
+};
+
+function perft(pos, depth) {
+  if (depth === 0) return 1;
+  const list = new Int32Array(256);
+  const n = pos.gen(list, false);
+  let total = 0;
+  const me = pos.side ? 1 : 0;
+  for (let i = 0; i < n; i++) {
+    const m = list[i];
+    pos.make(m);
+    if (!pos.attacked(pos.kings[me], pos.side)) {
+      total += depth === 1 ? 1 : perft(pos, depth - 1);
+    }
+    pos.unmake(m);
+  }
+  return total;
+}
+
+const START_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+/* ============================================================
+   EVALUATION
+   Centipawns, positive for white. Tapered between a middlegame
+   and an endgame set by how much material is left.
+   ============================================================ */
+
+const PST_MG = {
+  1: [0,0,0,0,0,0,0,0, 50,50,50,50,50,50,50,50, 10,10,20,30,30,20,10,10,
+      5,5,10,25,25,10,5,5, 0,0,0,20,20,0,0,0, 5,-5,-10,0,0,-10,-5,5,
+      5,10,10,-20,-20,10,10,5, 0,0,0,0,0,0,0,0],
+  2: [-50,-40,-30,-30,-30,-30,-40,-50, -40,-20,0,0,0,0,-20,-40,
+      -30,0,10,15,15,10,0,-30, -30,5,15,20,20,15,5,-30,
+      -30,0,15,20,20,15,0,-30, -30,5,10,15,15,10,5,-30,
+      -40,-20,0,5,5,0,-20,-40, -50,-40,-30,-30,-30,-30,-40,-50],
+  3: [-20,-10,-10,-10,-10,-10,-10,-20, -10,0,0,0,0,0,0,-10,
+      -10,0,5,10,10,5,0,-10, -10,5,5,10,10,5,5,-10,
+      -10,0,10,10,10,10,0,-10, -10,10,10,10,10,10,10,-10,
+      -10,5,0,0,0,0,5,-10, -20,-10,-10,-10,-10,-10,-10,-20],
+  4: [0,0,0,0,0,0,0,0, 5,10,10,10,10,10,10,5, -5,0,0,0,0,0,0,-5,
+      -5,0,0,0,0,0,0,-5, -5,0,0,0,0,0,0,-5, -5,0,0,0,0,0,0,-5,
+      -5,0,0,0,0,0,0,-5, 0,0,0,5,5,0,0,0],
+  5: [-20,-10,-10,-5,-5,-10,-10,-20, -10,0,0,0,0,0,0,-10,
+      -10,0,5,5,5,5,0,-10, -5,0,5,5,5,5,0,-5,
+      0,0,5,5,5,5,0,-5, -10,5,5,5,5,5,0,-10,
+      -10,0,5,0,0,0,0,-10, -20,-10,-10,-5,-5,-10,-10,-20],
+  6: [-30,-40,-40,-50,-50,-40,-40,-30, -30,-40,-40,-50,-50,-40,-40,-30,
+      -30,-40,-40,-50,-50,-40,-40,-30, -30,-40,-40,-50,-50,-40,-40,-30,
+      -20,-30,-30,-40,-40,-30,-30,-20, -10,-20,-20,-20,-20,-20,-20,-10,
+      20,20,0,0,0,0,20,20, 20,30,10,0,0,10,30,20],
+};
+const PST_EG = {
+  1: [0,0,0,0,0,0,0,0, 90,90,90,90,90,90,90,90, 55,55,55,55,55,55,55,55,
+      32,32,32,32,32,32,32,32, 16,16,16,16,16,16,16,16, 6,6,6,6,6,6,6,6,
+      0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0],
+  2: PST_MG[2], 3: PST_MG[3], 4: PST_MG[4], 5: PST_MG[5],
+  6: [-50,-40,-30,-20,-20,-30,-40,-50, -30,-20,-10,0,0,-10,-20,-30,
+      -30,-10,20,30,30,20,-10,-30, -30,-10,30,40,40,30,-10,-30,
+      -30,-10,30,40,40,30,-10,-30, -30,-10,20,30,30,20,-10,-30,
+      -30,-30,0,0,0,0,-30,-30, -50,-30,-30,-30,-30,-30,-30,-50],
+};
+const PHASE_W = [0, 0, 1, 1, 2, 4, 0];
+const FILE_OF = new Int8Array(64);
+const RANK_OF = new Int8Array(64);
+for (let i = 0; i < 64; i++) { FILE_OF[i] = i & 7; RANK_OF[i] = i >> 3; }
+
+function evaluate(pos) {
+  const b = pos.b;
+  let mg = 0, eg = 0, phase = 0;
+  const pawnFiles = [new Int8Array(8), new Int8Array(8)];
+  const pawnSquares = [[], []];
+  let bishops = [0, 0];
+  let kingSq = [pos.kings[0], pos.kings[1]];
+
+  for (let s = 0; s < 64; s++) {
+    const p = b[s];
+    if (!p) continue;
+    const t = p & 7, black = (p & E_BLACK) ? 1 : 0;
+    const idx = black ? (s ^ 56) : s;
+    const v = E_VAL[t];
+    const m = v + PST_MG[t][idx], e = v + PST_EG[t][idx];
+    if (black) { mg -= m; eg -= e; } else { mg += m; eg += e; }
+    phase += PHASE_W[t];
+    if (t === E_P) { pawnFiles[black][FILE_OF[s]]++; pawnSquares[black].push(s); }
+    if (t === E_B) bishops[black]++;
+  }
+
+  for (const side of [0, 1]) {
+    const sign = side ? -1 : 1;
+    if (bishops[side] >= 2) { mg += sign * 28; eg += sign * 42; }
+    for (let f = 0; f < 8; f++) {
+      const c = pawnFiles[side][f];
+      if (c > 1) { mg -= sign * 14 * (c - 1); eg -= sign * 20 * (c - 1); }
+      if (c > 0) {
+        const left = f > 0 ? pawnFiles[side][f - 1] : 0;
+        const right = f < 7 ? pawnFiles[side][f + 1] : 0;
+        if (!left && !right) { mg -= sign * 15; eg -= sign * 20; }
+      }
+    }
+    // passed pawns
+    for (const s of pawnSquares[side]) {
+      const f = FILE_OF[s], r = RANK_OF[s];
+      let blocked = false;
+      for (const of_ of [-1, 0, 1]) {
+        const nf = f + of_;
+        if (nf < 0 || nf > 7) continue;
+        for (const es of pawnSquares[side ^ 1]) {
+          if (FILE_OF[es] !== nf) continue;
+          if (side === 0 ? RANK_OF[es] < r : RANK_OF[es] > r) { blocked = true; break; }
+        }
+        if (blocked) break;
+      }
+      if (!blocked) {
+        const adv = side === 0 ? 7 - r : r;   // 0 at home, 6 near promotion
+        const bonus = [0, 6, 12, 22, 38, 62, 90, 0][adv] || 0;
+        mg += sign * (bonus >> 1); eg += sign * bonus;
+      }
+    }
+    // rooks on open and half open files
+    for (let s = 0; s < 64; s++) {
+      const p = b[s];
+      if (!p || (p & 7) !== E_R) continue;
+      if (((p & E_BLACK) ? 1 : 0) !== side) continue;
+      const f = FILE_OF[s];
+      if (!pawnFiles[side][f]) {
+        const open = !pawnFiles[side ^ 1][f];
+        mg += sign * (open ? 20 : 10); eg += sign * (open ? 12 : 6);
+      }
+    }
+    // king shelter, middlegame only
+    const ks = kingSq[side];
+    let shelter = 0;
+    const kf = FILE_OF[ks], kr = RANK_OF[ks];
+    for (let df = -1; df <= 1; df++) {
+      const nf = kf + df;
+      if (nf < 0 || nf > 7) continue;
+      const want = side === 0 ? kr - 1 : kr + 1;
+      if (want >= 0 && want < 8 && b[want * 8 + nf] === (E_P | (side ? E_BLACK : 0))) shelter += 12;
+      else if (!pawnFiles[side][nf]) shelter -= 14;
+    }
+    mg += sign * shelter;
+  }
+
+  const ph = Math.min(phase, 24);
+  const score = ((mg * ph) + (eg * (24 - ph))) / 24;
+  return (pos.side ? -score : score) | 0;   // from the mover's point of view
+}
+
+/* ============================================================
+   SEARCH
+   ============================================================ */
+const MATE_SCORE = 30000;
+const TT_BITS = 18, TT_SIZE = 1 << TT_BITS, TT_MASK = TT_SIZE - 1;
+const ttKey = new Int32Array(TT_SIZE);
+const ttMove = new Int32Array(TT_SIZE);
+const ttScore = new Int32Array(TT_SIZE);
+const ttDepth = new Int8Array(TT_SIZE);
+const ttFlag = new Int8Array(TT_SIZE);
+const TT_EXACT = 1, TT_LOWER = 2, TT_UPPER = 3;
+
+const MAX_PLY = 96;
+const killers = new Int32Array(MAX_PLY * 2);
+const history = new Int32Array(64 * 64);
+const moveStack = [];
+for (let i = 0; i < MAX_PLY + 16; i++) moveStack.push(new Int32Array(256));
+
+let nodes = 0, stopAt = 0, stopped = false;
+
+function ttClear() {
+  ttKey.fill(0); ttMove.fill(0); ttScore.fill(0); ttDepth.fill(0); ttFlag.fill(0);
+  history.fill(0); killers.fill(0);
+}
+
+function scoreMoves(pos, list, n, depth, ttm, scores) {
+  for (let i = 0; i < n; i++) {
+    const m = list[i];
+    if (m === ttm) { scores[i] = 1 << 24; continue; }
+    const cap = mCap(m);
+    if (cap) {
+      const victim = E_VAL[cap & 7], attacker = E_VAL[pos.b[mFrom(m)] & 7];
+      scores[i] = (1 << 20) + victim * 16 - attacker;
+    } else if (mFlag(m) === M_PROMO) {
+      scores[i] = (1 << 19) + E_VAL[mPromo(m)];
+    } else if (m === killers[depth * 2] || m === killers[depth * 2 + 1]) {
+      scores[i] = 1 << 18;
+    } else {
+      scores[i] = history[mFrom(m) * 64 + mTo(m)];
+    }
+  }
+}
+
+function pickMove(list, scores, n, i) {
+  let best = i;
+  for (let j = i + 1; j < n; j++) if (scores[j] > scores[best]) best = j;
+  if (best !== i) {
+    const tm = list[i]; list[i] = list[best]; list[best] = tm;
+    const ts = scores[i]; scores[i] = scores[best]; scores[best] = ts;
+  }
+  return list[i];
+}
+
+function quiesce(pos, alpha, beta, ply) {
+  if ((++nodes & 2047) === 0 && Date.now() > stopAt) stopped = true;
+  if (stopped || ply >= MAX_PLY - 6) return evaluate(pos);
+  const stand = evaluate(pos);
+  if (stand >= beta) return beta;
+  if (stand > alpha) alpha = stand;
+  const list = moveStack[ply];
+  const n = pos.gen(list, true);
+  const scores = new Int32Array(n);
+  scoreMoves(pos, list, n, 0, 0, scores);
+  const me = pos.side ? 1 : 0;
+  for (let i = 0; i < n; i++) {
+    const m = pickMove(list, scores, n, i);
+    const cap = mCap(m);
+    // delta pruning: a capture that cannot bring us near alpha is not worth it
+    if (cap && stand + E_VAL[cap & 7] + 200 < alpha) continue;
+    pos.make(m);
+    if (pos.attacked(pos.kings[me], pos.side)) { pos.unmake(m); continue; }
+    const sc = -quiesce(pos, -beta, -alpha, ply + 1);
+    pos.unmake(m);
+    if (stopped) return alpha;
+    if (sc >= beta) return beta;
+    if (sc > alpha) alpha = sc;
+  }
+  return alpha;
+}
+
+function negamax(pos, depth, alpha, beta, ply, canNull) {
+  if ((++nodes & 2047) === 0 && Date.now() > stopAt) stopped = true;
+  if (stopped) return 0;
+  if (ply >= MAX_PLY - 6) return evaluate(pos);
+  const me = pos.side ? 1 : 0;
+  const inChk = pos.attacked(pos.kings[me], pos.side ^ E_BLACK);
+  if (inChk && ply < 48) depth++;   // extend on checks, but not forever
+  if (depth <= 0) return quiesce(pos, alpha, beta, ply);
+
+  const idx = (pos.keyLo >>> 0) & TT_MASK;
+  let ttm = 0;
+  if (ttKey[idx] === pos.keyHi && ttKey[idx] !== 0) {
+    ttm = ttMove[idx];
+    if (ttDepth[idx] >= depth) {
+      const s = ttScore[idx], f = ttFlag[idx];
+      if (f === TT_EXACT) return s;
+      if (f === TT_LOWER && s >= beta) return beta;
+      if (f === TT_UPPER && s <= alpha) return alpha;
+    }
+  }
+
+  // null move: give the opponent a free move, if the position still looks
+  // fine we can prune. Skipped in check and in thin endgames.
+  if (canNull && !inChk && depth >= 3 && ply > 0) {
+    const staticEval = evaluate(pos);
+    if (staticEval >= beta) {
+      const savedEp = pos.ep;
+      pos.side ^= E_BLACK; pos.ep = -1;
+      pos.keyLo ^= Z_SIDE_LO; pos.keyHi ^= Z_SIDE_HI;
+      const sc = -negamax(pos, depth - 3, -beta, -beta + 1, ply + 1, false);
+      pos.side ^= E_BLACK; pos.ep = savedEp;
+      pos.keyLo ^= Z_SIDE_LO; pos.keyHi ^= Z_SIDE_HI;
+      if (!stopped && sc >= beta) return beta;
+    }
+  }
+
+  const list = moveStack[ply];
+  const n = pos.gen(list, false);
+  const scores = new Int32Array(n);
+  scoreMoves(pos, list, n, ply, ttm, scores);
+
+  let bestScore = -MATE_SCORE * 2, bestMove = 0, legal = 0;
+  const origAlpha = alpha;
+  for (let i = 0; i < n; i++) {
+    const m = pickMove(list, scores, n, i);
+    pos.make(m);
+    if (pos.attacked(pos.kings[me], pos.side)) { pos.unmake(m); continue; }
+    legal++;
+    let sc;
+    if (legal === 1) {
+      sc = -negamax(pos, depth - 1, -beta, -alpha, ply + 1, true);
+    } else {
+      // late move reduction for quiet moves that are unlikely to matter
+      let red = 0;
+      if (depth >= 3 && legal > 3 && !mCap(m) && mFlag(m) !== M_PROMO && !inChk) red = 1;
+      sc = -negamax(pos, depth - 1 - red, -alpha - 1, -alpha, ply + 1, true);
+      if (!stopped && sc > alpha) sc = -negamax(pos, depth - 1, -beta, -alpha, ply + 1, true);
+    }
+    pos.unmake(m);
+    if (stopped) return bestScore > -MATE_SCORE * 2 ? bestScore : 0;
+    if (sc > bestScore) { bestScore = sc; bestMove = m; }
+    if (sc > alpha) {
+      alpha = sc;
+      if (!mCap(m)) history[mFrom(m) * 64 + mTo(m)] += depth * depth;
+      if (alpha >= beta) {
+        if (!mCap(m)) {
+          killers[ply * 2 + 1] = killers[ply * 2];
+          killers[ply * 2] = m;
+        }
+        break;
+      }
+    }
+  }
+
+  if (!legal) return inChk ? -MATE_SCORE + ply : 0;
+
+  ttKey[idx] = pos.keyHi || 1;
+  ttMove[idx] = bestMove;
+  ttScore[idx] = bestScore;
+  ttDepth[idx] = depth;
+  ttFlag[idx] = bestScore >= beta ? TT_LOWER : bestScore > origAlpha ? TT_EXACT : TT_UPPER;
+  return bestScore;
+}
+
+/* Root search with iterative deepening. Returns the best move, its score
+   from the mover's point of view, and the principal variation. */
+function search(pos, opts = {}) {
+  const maxDepth = opts.depth || 8;
+  const movetime = opts.movetime || 1000;
+  nodes = 0; stopped = false;
+  stopAt = Date.now() + movetime;
+  const me = pos.side ? 1 : 0;
+  const rootList = new Int32Array(256);
+  const rn = pos.gen(rootList, false);
+  const legal = [];
+  for (let i = 0; i < rn; i++) {
+    pos.make(rootList[i]);
+    if (!pos.attacked(pos.kings[me], pos.side)) legal.push(rootList[i]);
+    pos.unmake(rootList[i]);
+  }
+  if (!legal.length) {
+    const inChk = pos.attacked(pos.kings[me], pos.side);
+    return { move: 0, score: inChk ? -MATE_SCORE : 0, mate: inChk, depth: 0, nodes: 0, over: true };
+  }
+
+  let best = legal[0], bestScore = 0, reached = 0;
+  const secondBest = { move: 0, score: -MATE_SCORE * 2 };
+  for (let d = 1; d <= maxDepth; d++) {
+    let alpha = -MATE_SCORE * 2, localBest = 0, localScore = -MATE_SCORE * 2;
+    let second = { move: 0, score: -MATE_SCORE * 2 };
+    // put the previous best first
+    const ordered = [best, ...legal.filter((m) => m !== best)];
+    for (const m of ordered) {
+      pos.make(m);
+      const sc = -negamax(pos, d - 1, -MATE_SCORE * 2, -alpha, 1, true);
+      pos.unmake(m);
+      if (stopped) break;
+      if (sc > localScore) {
+        second = { move: localBest, score: localScore };
+        localScore = sc; localBest = m;
+      } else if (sc > second.score) second = { move: m, score: sc };
+      if (sc > alpha) alpha = sc;
+    }
+    if (stopped && reached > 0) break;
+    if (localBest) {
+      best = localBest; bestScore = localScore; reached = d;
+      secondBest.move = second.move; secondBest.score = second.score;
+    }
+    if (Date.now() > stopAt) break;
+    if (Math.abs(bestScore) > MATE_SCORE - 100) break;   // found mate, stop
+  }
+
+  return {
+    move: best, score: bestScore, depth: reached, nodes,
+    mate: Math.abs(bestScore) > MATE_SCORE - 100,
+    mateIn: Math.abs(bestScore) > MATE_SCORE - 100
+      ? Math.ceil((MATE_SCORE - Math.abs(bestScore)) / 2) : null,
+    second: secondBest.move ? secondBest : null,
+    over: false,
+  };
+}
+
+/* Score one specific move, for comparing what was played against the best. */
+function scoreOneMove(pos, move, opts = {}) {
+  const movetime = opts.movetime || 600;
+  nodes = 0; stopped = false;
+  stopAt = Date.now() + movetime;
+  pos.make(move);
+  let sc = 0;
+  for (let d = 1; d <= (opts.depth || 8); d++) {
+    const v = -negamax(pos, d - 1, -MATE_SCORE * 2, MATE_SCORE * 2, 1, true);
+    if (stopped) break;
+    sc = v;
+    if (Date.now() > stopAt) break;
+  }
+  pos.unmake(move);
+  return sc;
+}
+/* ============================================================
+   REVIEW
+   Grades a whole game. One search per position: the value of the
+   move actually played is the negation of the best score in the
+   position it leads to, so no position is searched twice.
+
+   Win% and accuracy use the formulas Lichess publishes, which are
+   the only openly documented ones. chess.com keeps theirs private.
+   ============================================================ */
+
+const winPct = (cp) => {
+  const c = Math.max(-2200, Math.min(2200, cp));
+  return 50 + 50 * (2 / (1 + Math.exp(-0.00368208 * c)) - 1);
+};
+const cpOf = (score) =>
+  Math.abs(score) > MATE_SCORE - 200 ? (score > 0 ? 2600 : -2600) : score;
+const moveAccuracy = (lost) =>
+  Math.max(0, Math.min(100, 103.1668 * Math.exp(-0.04354 * Math.max(0, lost)) - 3.1669));
+
+/* Lichess takes the mean of a volatility weighted mean and a harmonic mean. */
+function gameAccuracy(accs, winsBefore) {
+  if (!accs.length) return null;
+  const w = 8;
+  const weights = accs.map((_, i) => {
+    const from = Math.max(0, i - w), to = Math.min(winsBefore.length - 1, i + w);
+    const win = winsBefore.slice(from, to + 1);
+    const mean = win.reduce((a, b) => a + b, 0) / win.length;
+    const varr = win.reduce((a, b) => a + (b - mean) ** 2, 0) / win.length;
+    return Math.max(0.5, Math.min(12, Math.sqrt(varr)));
+  });
+  const wsum = weights.reduce((a, b) => a + b, 0);
+  const volMean = accs.reduce((a, v, i) => a + v * weights[i], 0) / (wsum || 1);
+  const harm = accs.length / accs.reduce((a, v) => a + 1 / Math.max(v, 1), 0);
+  return Math.max(0, Math.min(100, (volMean + harm) / 2));
+}
+
+/* ---------- classification ---------- */
+const LABELS = {
+  brilliant: { name: "Brilliant", plain: "a sacrifice that works", tone: "brilliant", mark: "!!" },
+  great: { name: "Great", plain: "the only move that held it", tone: "great", mark: "!" },
+  best: { name: "Best", plain: "the top move", tone: "best", mark: "" },
+  excellent: { name: "Excellent", plain: "as good as the best move", tone: "best", mark: "" },
+  good: { name: "Good", plain: "fine, slightly short of the best", tone: "good", mark: "" },
+  book: { name: "Book", plain: "a known opening move", tone: "book", mark: "" },
+  inaccuracy: { name: "Inaccuracy", plain: "a small slip", tone: "inacc", mark: "?!" },
+  mistake: { name: "Mistake", plain: "this cost you real ground", tone: "mistake", mark: "?" },
+  miss: { name: "Missed win", plain: "you were winning and let it go", tone: "miss", mark: "" },
+  blunder: { name: "Blunder", plain: "this lost the position or a piece", tone: "blunder", mark: "??" },
+};
+
+/* Bands widen for weaker players, as chess.com's do. */
+function bands(rating) {
+  const r = rating || 700;
+  if (r < 900) return { exc: 3, good: 7, inacc: 13, mist: 22 };
+  if (r < 1300) return { exc: 2.5, good: 6, inacc: 11, mist: 20 };
+  if (r < 1800) return { exc: 2, good: 5, inacc: 10, mist: 18 };
+  return { exc: 1.5, good: 4, inacc: 9, mist: 16 };
+}
+
+/* Was material handed over on this move, and does it survive? A sacrifice
+   only counts as brilliant if the engine still likes the position. */
+function givesMaterial(pos, move) {
+  const from = mFrom(move), to = mTo(move);
+  const movedVal = E_VAL[pos.b[from] & 7];
+  const capturedVal = mCap(move) ? E_VAL[mCap(move) & 7] : 0;
+  if (movedVal - capturedVal < 200) return 0;
+  pos.make(move);
+  const them = pos.side;
+  // cheapest thing that can take it. A king recapture costs them nothing.
+  let cheapest = Infinity;
+  for (let s = 0; s < 64; s++) {
+    const q = pos.b[s];
+    if (!q || (q & E_BLACK) !== them) continue;
+    if (!attacksSquare(pos, s, to)) continue;
+    const v = (q & 7) === E_K ? 0 : E_VAL[q & 7];
+    if (v < cheapest) cheapest = v;
+  }
+  pos.unmake(move);
+  if (cheapest === Infinity) return 0;          // nothing can take it, no sacrifice
+  return Math.max(0, movedVal - cheapest - capturedVal);
+}
+
+/* does the piece on `from` attack `target` right now */
+function attacksSquare(pos, from, target) {
+  const p = pos.b[from];
+  if (!p) return false;
+  const t = p & 7;
+  if (t === E_P) {
+    const caps = PAWN_CAP[(p & E_BLACK) ? 1 : 0][from];
+    for (let i = 0; i < caps.length; i++) if (caps[i] === target) return true;
+    return false;
+  }
+  if (t === E_N) {
+    const kn = KNIGHT_T[from];
+    for (let i = 0; i < kn.length; i++) if (kn[i] === target) return true;
+    return false;
+  }
+  if (t === E_K) {
+    const kg = KING_T[from];
+    for (let i = 0; i < kg.length; i++) if (kg[i] === target) return true;
+    return false;
+  }
+  const ds = t === E_B ? 4 : 0, de = t === E_R ? 4 : 8;
+  for (let d = ds; d < de; d++) {
+    const ray = RAY[from][d];
+    for (let i = 0; i < ray.length; i++) {
+      if (ray[i] === target) return true;
+      if (pos.b[ray[i]]) break;
+    }
+  }
+  return false;
+}
+
+function classify(ctx) {
+  const { lost, isBest, inBook, winBefore, winAfter, secondGap, sacrifice, hadMate, playedMate, b } = ctx;
+  if (inBook) return "book";
+  if (isBest || lost <= 0.6) {
+    if (ctx.deliversMate) return "best";
+    if (sacrifice >= 200 && winAfter >= 45) return "brilliant";
+    if (secondGap >= 14) return "great";
+    return "best";
+  }
+  if (hadMate && !playedMate) return lost >= b.mist ? "miss" : "mistake";
+  if (winBefore >= 68 && winAfter < 52 && lost >= b.inacc) return "miss";
+  if (lost <= b.exc) return "excellent";
+  if (lost <= b.good) return "good";
+  if (lost <= b.inacc) return "inaccuracy";
+  if (lost <= b.mist) return "mistake";
+  return "blunder";
+}
+
+/* ---------- opening book ----------
+   Small on purpose. Enough to cover what a beginner meets, and honest
+   about that rather than pretending to be a theory database. */
+const BOOK = [
+  "e4 e5 Nf3 Nc6 Bb5 a6 Ba4 Nf6 O-O Be7",
+  "e4 e5 Nf3 Nc6 Bc4 Bc5 c3 Nf6 d3 d6",
+  "e4 e5 Nf3 Nc6 Bc4 Nf6 Ng5 d5 exd5 Na5",
+  "e4 e5 Nf3 Nc6 d4 exd4 Nxd4 Nf6 Nxc6 bxc6",
+  "e4 e5 Nf3 Nf6 Nxe5 d6 Nf3 Nxe4 d4 d5",
+  "e4 e5 Nf3 d6 d4 exd4 Nxd4 Nf6 Nc3 Be7",
+  "e4 e5 Nc3 Nf6 f4 d5 fxe5 Nxe4 Nf3 Be7",
+  "e4 e5 f4 exf4 Nf3 g5 Bc4 Bg7 d4 d6",
+  "e4 e5 Bc4 Nf6 d3 c6 Nf3 d5 Bb3 Bd6",
+  "e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6",
+  "e4 c5 Nf3 Nc6 d4 cxd4 Nxd4 g6 Nc3 Bg7",
+  "e4 c5 Nf3 e6 d4 cxd4 Nxd4 Nc6 Nc3 Qc7",
+  "e4 c5 c3 d5 exd5 Qxd5 d4 Nf6 Nf3 e6",
+  "e4 c5 Nc3 Nc6 g3 g6 Bg2 Bg7 d3 d6",
+  "e4 e6 d4 d5 Nc3 Nf6 e5 Nfd7 f4 c5",
+  "e4 e6 d4 d5 Nd2 Nf6 e5 Nfd7 Bd3 c5",
+  "e4 e6 d4 d5 exd5 exd5 Nf3 Nf6 Bd3 Bd6",
+  "e4 c6 d4 d5 Nc3 dxe4 Nxe4 Bf5 Ng3 Bg6",
+  "e4 c6 d4 d5 exd5 cxd5 c4 Nf6 Nc3 e6",
+  "e4 d5 exd5 Qxd5 Nc3 Qa5 d4 Nf6 Nf3 c6",
+  "e4 d5 exd5 Nf6 d4 Nxd5 Nf3 g6 Be2 Bg7",
+  "e4 d6 d4 Nf6 Nc3 g6 Nf3 Bg7 Be2 O-O",
+  "e4 g6 d4 Bg7 Nc3 d6 Nf3 Nf6 Be2 O-O",
+  "e4 Nf6 e5 Nd5 d4 d6 Nf3 dxe5 Nxe5 c6",
+  "e4 Nc6 d4 d5 Nc3 dxe4 d5 Ne5 Qd4 Ng6",
+  "d4 d5 c4 e6 Nc3 Nf6 Nf3 Be7 Bg5 O-O",
+  "d4 d5 c4 c6 Nf3 Nf6 Nc3 e6 Bg5 h6",
+  "d4 d5 c4 dxc4 Nf3 Nf6 e3 e6 Bxc4 c5",
+  "d4 d5 Nf3 Nf6 Bf4 e6 e3 Bd6 Bxd6 Qxd6",
+  "d4 d5 c4 e5 dxe5 d4 Nf3 Nc6 a3 Bg4",
+  "d4 Nf6 c4 g6 Nc3 Bg7 e4 d6 Nf3 O-O",
+  "d4 Nf6 c4 e6 Nc3 Bb4 e3 O-O Bd3 d5",
+  "d4 Nf6 c4 g6 Nc3 d5 cxd5 Nxd5 e4 Nxc3",
+  "d4 f5 g3 Nf6 Bg2 e6 Nf3 Be7 O-O O-O",
+  "d4 e6 c4 Nf6 Nc3 Bb4 Qc2 O-O a3 Bxc3",
+  "c4 e5 Nc3 Nf6 Nf3 Nc6 g3 d5 cxd5 Nxd5",
+  "c4 Nf6 Nc3 e6 Nf3 d5 d4 Be7 Bg5 O-O",
+  "Nf3 d5 d4 Nf6 c4 e6 Nc3 Be7 Bg5 O-O",
+  "Nf3 Nf6 c4 e6 Nc3 d5 d4 Be7 Bf4 O-O",
+  "f4 d5 Nf3 Nf6 e3 g6 Be2 Bg7 O-O O-O",
+  "e4 e5 Nf3 Nc6 Bb5 Nf6 O-O Nxe4 d4 Nd6",
+  "e4 e5 Qh5 Nc6 Bc4 g6 Qf3 Nf6 Ne2 Bg7",
+  "d4 d5 e3 Nf6 Nf3 e6 Bd3 c5 c3 Nc6",
+];
+const BOOK_SET = (() => {
+  const s = new Set();
+  for (const line of BOOK) {
+    const mv = line.split(" ");
+    for (let i = 1; i <= mv.length; i++) s.add(mv.slice(0, i).join(" "));
+  }
+  return s;
+})();
+const inBookAfter = (sanList) => BOOK_SET.has(sanList.join(" "));
+
+/* ---------- words ---------- */
+const SQ = (i) => "abcdefgh"[i & 7] + (8 - (i >> 3));
+const PIECE_WORD = { 1: "pawn", 2: "knight", 3: "bishop", 4: "rook", 5: "queen", 6: "king" };
+
+function moveInWords(pos, move) {
+  const from = mFrom(move), to = mTo(move);
+  const p = pos.b[from] & 7;
+  const cap = mCap(move);
+  const flag = mFlag(move);
+  if (flag === M_CASTLE) return to > from ? "castling kingside" : "castling queenside";
+  if (flag === M_PROMO) return `pushing the pawn to ${SQ(to)} and taking a ${PIECE_WORD[mPromo(move)]}`;
+  if (cap) return `taking the ${PIECE_WORD[cap & 7]} on ${SQ(to)} with your ${PIECE_WORD[p]}`;
+  return `your ${PIECE_WORD[p]} to ${SQ(to)}`;
+}
+
+function materialFor(pos, colour) {
+  let mine = 0, theirs = 0;
+  for (let s = 0; s < 64; s++) {
+    const p = pos.b[s];
+    if (!p || (p & 7) === E_K) continue;
+    const v = E_VAL[p & 7];
+    if ((p & E_BLACK) === colour) mine += v; else theirs += v;
+  }
+  return mine - theirs;
+}
+
+/* Why the move cost what it cost, in concrete terms only. */
+function explain(pos, played, best, label, info) {
+  const bits = [];
+  const mover = pos.side;
+  if (label === "book") return ["A known opening move, so it is not graded."];
+
+  if (label === "brilliant") {
+    bits.push(`You gave up material and it works, which is why this is the best move in the position.`);
+  } else if (label === "great") {
+    bits.push(`Nothing else came close here. Every other move gave up a large chunk of the position.`);
+  } else if (label === "best" || label === "excellent") {
+    bits.push(`Nothing better was available.`);
+  }
+
+  if (info.punish) {
+    bits.push(`They can answer with ${info.punish}${info.materialSwing >= 200
+      ? `, which wins ${Math.round(info.materialSwing / 100)} points of material`
+      : ""}.`);
+  }
+  if (info.mateAgainst) bits.push(`It also allows mate in ${info.mateAgainst}.`);
+  if (info.mateFor) bits.push(`You had mate in ${info.mateFor} available.`);
+
+  if (best && best !== played && label !== "best" && label !== "excellent" && label !== "book") {
+    bits.push(`Better was ${info.bestWords}${info.bestGain >= 200
+      ? `, which wins ${Math.round(info.bestGain / 100)} points`
+      : info.bestMate ? `, which is mate in ${info.bestMate}` : ""}.`);
+  }
+  if (!bits.length) bits.push(`The position is simply better after the other move, without one clear tactical reason.`);
+  return bits;
+}
+
+/* ============================================================
+   REVIEW A GAME
+   moves: SAN list. onProgress(done, total) is called as it goes.
+   ============================================================ */
+function reviewGame(sanMoves, opts = {}) {
+  const budget = opts.movetime || 160;
+  const depth = opts.depth || 12;
+  const rating = opts.rating || 700;
+  const b = bands(rating);
+  const pos = new Pos().setFEN(START_FEN);
+  ttClear();
+
+  // walk the game once, keeping the position before each move
+  const line = [];
+  const played = [];
+  const sanSoFar = [];
+  const bare = (s) => String(s).replace(/[+#!?]/g, "");
+  for (const san of sanMoves) {
+    const legal = pos.legalMoves();
+    let found = 0;
+    // the app's tokeniser strips check marks, so compare without them
+    for (const m of legal) {
+      if (bare(sanForMove(pos, m)) === bare(san)) { found = m; break; }
+    }
+    if (!found) break;
+    line.push({ fen: pos.fen(), side: pos.side, san, move: found, sanIndex: sanSoFar.length });
+    sanSoFar.push(san);
+    played.push(found);
+    pos.make(found);
+  }
+  line.push({ fen: pos.fen(), side: pos.side, san: null, move: 0, sanIndex: sanSoFar.length });
+
+  // one search per position
+  const evals = [];
+  for (let i = 0; i < line.length; i++) {
+    const p = new Pos().setFEN(line[i].fen);
+    const r = search(p, { depth, movetime: budget });
+    evals.push(r);
+    if (opts.onProgress) opts.onProgress(i + 1, line.length);
+  }
+
+  const out = [];
+  const accs = { w: [], b: [] };
+  const winsBefore = { w: [], b: [] };
+  const bookSan = [];
+
+  for (let i = 0; i < line.length - 1; i++) {
+    const node = line[i];
+    const p = new Pos().setFEN(node.fen);
+    const meIsWhite = node.side === 0;
+    const key = meIsWhite ? "w" : "b";
+    const bestR = evals[i];
+    const nextR = evals[i + 1];
+    const bestScore = bestR.score;
+    const playedScore = -nextR.score;     // their best reply, from our side
+    const wBefore = winPct(cpOf(bestScore));
+    const wAfter = winPct(cpOf(playedScore));
+    let lost = Math.max(0, wBefore - wAfter);
+
+    bookSan.push(node.san);
+    const isBook = inBookAfter(bookSan);
+    const isBest = bestR.move === node.move;
+    if (isBest) lost = 0;
+    const secondGap = bestR.second && bestR.second.move
+      ? Math.max(0, wBefore - winPct(cpOf(bestR.second.score))) : 0;
+    const sacrifice = givesMaterial(p, node.move);
+
+    const label = classify({
+      lost, isBest, inBook: isBook, winBefore: wBefore, winAfter: wAfter,
+      secondGap, sacrifice, hadMate: bestR.mate && bestR.score > 0,
+      playedMate: nextR.mate && nextR.score < 0,
+      deliversMate: nextR.over && nextR.mate, b,
+    });
+
+    if (!isBook) {
+      accs[key].push(moveAccuracy(lost));
+      winsBefore[key].push(wBefore);
+    }
+
+    // concrete detail for the explanation
+    const info = { bestWords: "", bestGain: 0, punish: "", materialSwing: 0, mateAgainst: null, mateFor: null };
+    if (bestR.move && !isBest) {
+      const bp = new Pos().setFEN(node.fen);
+      info.bestWords = moveInWords(bp, bestR.move);
+      const before = materialFor(bp, bp.side);
+      bp.make(bestR.move);
+      const reply = search(bp, { depth: 6, movetime: 60 });
+      if (reply.move) bp.make(reply.move);
+      info.bestGain = materialFor(bp, node.side) - before;
+      info.bestMate = bestR.mate ? bestR.mateIn : null;
+    }
+    if (nextR.move && (label === "blunder" || label === "mistake" || label === "miss")) {
+      const ap = new Pos().setFEN(line[i + 1].fen);
+      const before = materialFor(ap, node.side);
+      info.punish = sanForMove(ap, nextR.move);
+      ap.make(nextR.move);
+      info.materialSwing = before - materialFor(ap, node.side);
+      if (nextR.mate && nextR.score > 0) info.mateAgainst = nextR.mateIn;
+    }
+    if (bestR.mate && bestR.score > 0 && !(nextR.mate && nextR.score < 0)) info.mateFor = bestR.mateIn;
+
+    out.push({
+      i, san: node.san, side: key, label,
+      cp: Math.round(cpOf(playedScore) * (meIsWhite ? 1 : -1)),   // white positive, for the graph
+      lost: +lost.toFixed(1),
+      acc: +moveAccuracy(lost).toFixed(1),
+      best: bestR.move ? { from: mFrom(bestR.move), to: mTo(bestR.move), promo: mPromo(bestR.move),
+        san: sanForMove(new Pos().setFEN(node.fen), bestR.move) } : null,
+      why: explain(p, node.move, bestR.move, label, info),
+      depth: bestR.depth,
+    });
+  }
+
+  return {
+    moves: out,
+    accuracy: {
+      w: gameAccuracy(accs.w, winsBefore.w),
+      b: gameAccuracy(accs.b, winsBefore.b),
+    },
+    counts: (() => {
+      const c = { w: {}, b: {} };
+      for (const m of out) c[m.side][m.label] = (c[m.side][m.label] || 0) + 1;
+      return c;
+    })(),
+    graph: out.map((m) => m.cp),
+  };
+}
+
+/* SAN for an engine move, needed to match the game's notation. */
+function sanForMove(pos, move) {
+  const from = mFrom(move), to = mTo(move), flag = mFlag(move);
+  const p = pos.b[from], t = p & 7;
+  if (flag === M_CASTLE) return to > from ? "O-O" : "O-O-O";
+  const cap = mCap(move);
+  let s = "";
+  if (t !== E_P) {
+    s += "  NBRQK"[t] === " " ? "" : ["", "", "N", "B", "R", "Q", "K"][t];
+    const rivals = pos.legalMoves().filter((m) =>
+      mTo(m) === to && mFrom(m) !== from && pos.b[mFrom(m)] === p);
+    if (rivals.length) {
+      const sameFile = rivals.some((m) => (mFrom(m) & 7) === (from & 7));
+      const sameRank = rivals.some((m) => (mFrom(m) >> 3) === (from >> 3));
+      if (!sameFile) s += "abcdefgh"[from & 7];
+      else if (!sameRank) s += String(8 - (from >> 3));
+      else s += SQ(from);
+    }
+  } else if (cap) s += "abcdefgh"[from & 7];
+  if (cap) s += "x";
+  s += SQ(to);
+  if (flag === M_PROMO) s += "=" + ["", "", "N", "B", "R", "Q"][mPromo(move)];
+  pos.make(move);
+  const me = pos.side ? 1 : 0;
+  const chk = pos.attacked(pos.kings[me], pos.side ^ E_BLACK);
+  const any = pos.legalMoves().length > 0;
+  pos.unmake(move);
+  if (chk) s += any ? "+" : "#";
+  return s;
+}
+
+/* ---------- worker protocol ---------- */
+self.onmessage = function (e) {
+  const d = e.data;
+  if (d.type !== "review") return;
+  try {
+    const rev = reviewGame(d.sans, {
+      movetime: d.movetime || 160, depth: 14, rating: d.rating || 700,
+      onProgress: (done, total) => self.postMessage({ type: "progress", id: d.id, done, total }),
+    });
+    self.postMessage({ type: "done", id: d.id, rev });
+  } catch (err) {
+    self.postMessage({ type: "error", id: d.id, msg: String((err && err.message) || err) });
+  }
+};
+</script>
 <script>
 /* ============================================================
    1. CHESS CORE
@@ -1860,17 +3260,21 @@ function applyFilter(games, f) {
 
 const LAST = "cc:last";
 const keyFor = (n) => "cc:u:" + n.trim().toLowerCase();
-const CAP = 600;
+const CAP = 400;
 
 const S = {
   name: "", games: [], review: null, apiKey: "", synced: {}, plain: false, seenIntro: false,
-  filter: { bots: true, onlyBots: false, minElo: null, maxElo: null },
+  filter: { bots: true, onlyBots: false, minElo: null, maxElo: null }, theme: "light",
   tab: "home", page: null, view: null, ply: 0, ready: false, screen: "login",
   inspect: null, toast: null, busy: "", shown: 20, pick: null, pending: "", intro: 0,
   showBest: false, best: null, debrief: null,
   drills: null, di: 0, dFrom: null, dResult: null, dScore: { right: 0, done: 0 },
   compare: null, compareName: "",
+  queue: [], qActive: null, qDone: 0, qTotal: 0, qProg: 0,
+  gh: { owner: "", repo: "", path: "games.json", branch: "main", token: "" },
+  showBestMove: false, reviewDepth: 160,
 };
+let W = null;
 const replayCache = new Map();
 
 const store = {
@@ -1885,10 +3289,19 @@ const store = {
 };
 const tick = () => new Promise((r) => setTimeout(r, 0));
 
+function applyTheme() {
+  try {
+    const dark = S.theme === "dark" ||
+      (S.theme === "auto" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
+    document.documentElement.dataset.theme = dark ? "dark" : "light";
+  } catch {}
+}
+
 async function persist() {
   if (!S.name) return;
   const p = { name: S.name, games: S.games.slice(-CAP), review: S.review, apiKey: S.apiKey,
-    synced: S.synced, plain: S.plain, seenIntro: S.seenIntro, filter: S.filter };
+    synced: S.synced, plain: S.plain, seenIntro: S.seenIntro, filter: S.filter, theme: S.theme,
+    gh: S.gh, reviewDepth: S.reviewDepth };
   let body = JSON.stringify(p);
   while (body.length > 4_000_000 && p.games.length > 20) {
     p.games = p.games.slice(Math.ceil(p.games.length * 0.2));
@@ -1910,6 +3323,9 @@ async function loadUser(name) {
       S.games = d.games || []; S.review = d.review || null; S.apiKey = d.apiKey || "";
       S.synced = d.synced || {}; S.plain = !!d.plain; S.seenIntro = !!d.seenIntro;
       if (d.filter) S.filter = { ...S.filter, ...d.filter };
+      if (d.theme) S.theme = d.theme;
+      if (d.gh) S.gh = { ...S.gh, ...d.gh };
+      if (d.reviewDepth) S.reviewDepth = d.reviewDepth;
       if (d.name) S.name = d.name;
     } catch {}
   }
@@ -1932,6 +3348,163 @@ async function upgradeSaved() {
     if (i % 5 === 0) { S.busy = `Looking again at your games, ${i} of ${S.games.length}`; render(); await tick(); }
   }
   S.games = out; S.busy = ""; await persist();
+}
+
+/* ============================================================
+   THE ENGINE, IN A WORKER
+   Grading a game is roughly eighty searches, so it runs off the
+   main thread and one game at a time. Results are cached, so a
+   game is only ever graded once.
+   ============================================================ */
+const REVIEW_LABELS = {
+  brilliant: ["Brilliant", "a sacrifice that works", "brilliant"],
+  great: ["Great", "the only move that held it", "great"],
+  best: ["Best", "the top move", "best"],
+  excellent: ["Excellent", "as good as the best", "best"],
+  good: ["Good", "fine, just short of best", "good"],
+  book: ["Book", "known opening move", "book"],
+  inaccuracy: ["Inaccuracy", "a small slip", "inacc"],
+  mistake: ["Mistake", "cost you real ground", "mistake"],
+  miss: ["Missed win", "you were winning and let it go", "miss"],
+  blunder: ["Blunder", "lost a piece or the game", "blunder"],
+};
+
+function startWorker() {
+  if (W) return W;
+  try {
+    const src = document.getElementById("engsrc").textContent;
+    W = new Worker(URL.createObjectURL(new Blob([src], { type: "application/javascript" })));
+    W.onmessage = (e) => {
+      const d = e.data;
+      if (d.type === "progress") { S.qProg = Math.round((d.done / d.total) * 100); paintProgress(); }
+      else if (d.type === "done") { onReviewed(d.id, d.rev); }
+      else if (d.type === "error") { onReviewed(d.id, null); }
+    };
+    W.onerror = () => { S.qActive = null; };
+  } catch { W = null; }
+  return W;
+}
+
+function sansOf(g) {
+  const body = (g.pgn || "").replace(/^(?:\[[^\]\n]*\]\s*)+/, "");
+  return tokenizeMoves(body).map((t) => t.san);
+}
+
+function queueReview(ids) {
+  const want = ids.filter((id) => {
+    const g = S.games.find((x) => x.id === id);
+    return g && !g.rev && g.pgn;
+  });
+  for (const id of want) if (!S.queue.includes(id)) S.queue.push(id);
+  S.qTotal = S.queue.length + (S.qActive ? 1 : 0);
+  S.qDone = 0;
+  pumpQueue();
+}
+
+function pumpQueue() {
+  if (S.qActive || !S.queue.length) { if (!S.queue.length && !S.qActive) render(); return; }
+  if (!startWorker()) { S.toast = "This browser cannot run the engine in the background."; render(); return; }
+  const id = S.queue.shift();
+  const g = S.games.find((x) => x.id === id);
+  if (!g) return pumpQueue();
+  S.qActive = id; S.qProg = 0;
+  W.postMessage({ type: "review", id, sans: sansOf(g),
+    movetime: S.reviewDepth, rating: g.my || 700 });
+  render();
+}
+
+async function onReviewed(id, rev) {
+  const g = S.games.find((x) => x.id === id);
+  if (g) g.rev = rev ? packReview(rev) : { failed: true };
+  S.qActive = null; S.qDone++; S.qProg = 0;
+  await persist();
+  if (S.queue.length) pumpQueue(); else { S.qTotal = 0; render(); }
+  if (S.view === id) render();
+}
+
+/* only what cannot be recomputed cheaply gets stored */
+const WHY_LABELS = ["blunder", "mistake", "miss", "inaccuracy", "brilliant", "great"];
+function packReview(rev) {
+  return {
+    a: [rev.accuracy.w == null ? null : +rev.accuracy.w.toFixed(1),
+        rev.accuracy.b == null ? null : +rev.accuracy.b.toFixed(1)],
+    c: rev.counts,
+    m: rev.moves.map((m) => {
+      const o = { l: m.label, o: m.lost, c: Math.max(-900, Math.min(900, m.c || m.cp)) };
+      if (m.best) o.b = [m.best.from, m.best.to, m.best.san];
+      if (WHY_LABELS.includes(m.label) && m.why) o.w = m.why;
+      return o;
+    }),
+  };
+}
+
+const revOf = (g) => (g && g.rev && !g.rev.failed ? g.rev : null);
+const reviewedCount = () => S.games.filter((g) => revOf(g)).length;
+
+function paintProgress() {
+  const el = document.getElementById("qbar");
+  if (el) el.style.width = S.qProg + "%";
+  const t = document.getElementById("qtxt");
+  if (t) t.textContent = `Grading game ${S.qDone + 1} of ${S.qTotal}, ${S.qProg}%`;
+}
+
+/* ============================================================
+   GITHUB SYNC
+   The repo has to be public for free Pages, so anything pushed
+   there is readable by anyone with the link.
+   ============================================================ */
+const b64 = (str) => btoa(unescape(encodeURIComponent(str)));
+const unb64 = (str) => decodeURIComponent(escape(atob(str.replace(/\s/g, ""))));
+
+function ghHeaders() {
+  return { Authorization: `Bearer ${S.gh.token}`, Accept: "application/vnd.github+json",
+    "X-GitHub-Api-Version": "2022-11-28", "Content-Type": "application/json" };
+}
+const ghUrl = () =>
+  `https://api.github.com/repos/${S.gh.owner}/${S.gh.repo}/contents/${S.gh.path}`;
+
+async function ghPush() {
+  if (!S.gh.owner || !S.gh.repo || !S.gh.token) { S.toast = "Fill in the repo and token first."; render(); return; }
+  S.busy = "Pushing to GitHub"; render();
+  try {
+    let sha = null;
+    const head = await fetch(`${ghUrl()}?ref=${encodeURIComponent(S.gh.branch)}`, { headers: ghHeaders() });
+    if (head.ok) sha = (await head.json()).sha;
+    const payload = JSON.stringify({ name: S.name, saved: Date.now(), games: S.games });
+    const res = await fetch(ghUrl(), {
+      method: "PUT", headers: ghHeaders(),
+      body: JSON.stringify({ message: `chess post mortem: ${S.games.length} games`,
+        content: b64(payload), branch: S.gh.branch, ...(sha ? { sha } : {}) }),
+    });
+    if (!res.ok) throw new Error(`GitHub said ${res.status}`);
+    S.toast = `Pushed ${S.games.length} games`;
+  } catch (e) {
+    S.toast = e.message.includes("401") || e.message.includes("403")
+      ? "GitHub rejected the token. Check it has contents write on that repo."
+      : `Push failed. ${e.message}`;
+  }
+  S.busy = ""; render();
+  setTimeout(() => { S.toast = null; render(); }, 6000);
+}
+
+async function ghPull() {
+  if (!S.gh.owner || !S.gh.repo) { S.toast = "Fill in the repo first."; render(); return; }
+  S.busy = "Pulling from GitHub"; render();
+  try {
+    const h = S.gh.token ? ghHeaders() : { Accept: "application/vnd.github+json" };
+    const res = await fetch(`${ghUrl()}?ref=${encodeURIComponent(S.gh.branch)}`, { headers: h });
+    if (!res.ok) throw new Error(`GitHub said ${res.status}`);
+    const data = JSON.parse(unb64((await res.json()).content));
+    const have = new Set(S.games.map((g) => g.id));
+    const add = (data.games || []).filter((g) => g && g.id && !have.has(g.id));
+    S.games = [...S.games, ...add].sort((a, b) => a.d - b.d).slice(-CAP);
+    await persist();
+    S.toast = add.length ? `Brought back ${add.length} games` : "Nothing new there";
+  } catch (e) {
+    S.toast = `Pull failed. ${e.message}`;
+  }
+  S.busy = ""; render();
+  setTimeout(() => { S.toast = null; render(); }, 6000);
 }
 
 /* ---------- helpers ---------- */
@@ -2150,6 +3723,7 @@ async function importText(raw, forcedName) {
   S.pick = null; S.pending = ""; S.busy = ""; S.drills = null;
   await persist();
   if (fresh.length) {
+    queueReview(fresh.map((g) => g.id));
     S.debrief = debriefFor(fresh, S.games);
     S.page = "debrief"; S.tab = "home"; S.view = null;
   } else {
@@ -2164,9 +3738,18 @@ async function importText(raw, forcedName) {
 /* ============================================================
    SCREENS
    ============================================================ */
+function markSVG() {
+  const s = 1.55 / 36;
+  return `<svg viewBox="0 0 2 2" class="marksvg" aria-hidden="true">
+    <rect width="1" height="1" class="sl"/><rect x="1" width="1" height="1" class="sd"/>
+    <rect y="1" width="1" height="1" class="sd"/><rect x="1" y="1" width="1" height="1" class="sl"/>
+    <g class="pb" transform="translate(${(1 - 22.5 * s).toFixed(4)} ${(1 - 21 * s).toFixed(4)}) scale(${s.toFixed(5)})"
+      stroke-width="1.1">${PIECE_PATHS.n}</g></svg>`;
+}
+
 function screenLogin() {
   return `<div class="login">
-    <div class="mark"><svg viewBox="0 0 45 45" class="marksvg"><g class="pw">${PIECE_PATHS.n}</g></svg></div>
+    <div class="mark">${markSVG()}</div>
     <h1 class="big">Chess post mortem</h1>
     <p class="lead">Your games, read back to you in plain English.</p>
     <label class="lbl" for="user">chess.com username</label>
@@ -2219,12 +3802,30 @@ function screenHome(agg) {
       <b>${esc(m.value)}</b><span>${esc(m.title.split(" ").slice(0, 3).join(" "))}</span></button>`).join("")}
   </div>
 
+  ${gradingCard()}
   <div class="menu">
     <button class="mrow" data-a="page" data-p="todo"><span>What to do on chess.com</span><i>›</i></button>
     <button class="mrow" data-a="page" data-p="moments"><span>Moments worth replaying</span><i>›</i></button>
     <button class="mrow" data-a="page" data-p="numbers"><span>All your numbers</span><i>›</i></button>
     ${S.debrief ? `<button class="mrow" data-a="page" data-p="debrief"><span>Last session debrief</span><i>›</i></button>` : ""}
   </div>`;
+}
+
+function gradingCard() {
+  const done = reviewedCount(), total = S.games.length;
+  if (S.qActive) {
+    return `<div class="card"><div class="kick">Grading your games</div>
+      <div class="qtrack"><i id="qbar" style="width:${S.qProg}%"></i></div>
+      <div class="tiny" id="qtxt">Game ${S.qDone + 1} of ${S.qTotal}, ${S.qProg}%</div>
+      <div class="tiny">Move by move grades, like a game review. Leave it running, it keeps going
+      while you look around.</div></div>`;
+  }
+  if (done >= total) return "";
+  return `<div class="card"><div class="kick">Move by move grades</div>
+    <div class="h3">${done} of ${total} games graded</div>
+    <p class="nm">Every move gets a grade, the move you should have played, and why. It takes about
+    fifteen seconds a game.</p>
+    <button class="btn pri wide" data-a="revall">Grade the rest</button></div>`;
 }
 
 function screenDebrief() {
@@ -2458,9 +4059,42 @@ const GLOSSARY = [
 
 function screenSettings() {
   return `<div class="card">
+    <div class="kick">Appearance</div>
+    <div class="frow" style="margin-top:11px">
+      ${[["light", "light"], ["dark", "dark"], ["auto", "match phone"]].map(([k, l]) =>
+        `<button class="fchip ${S.theme === k ? "on" : ""}" data-a="theme" data-v="${k}">${l}</button>`).join("")}
+    </div>
+  </div>
+  <div class="card">
     <div class="srow"><div><div class="h3">Beginner mode</div>
       <div class="tiny nm">Writes moves as sentences instead of Nf3</div></div>
       <button class="btn sm ${S.plain ? "pri" : ""}" data-a="plain">${S.plain ? "on" : "off"}</button></div>
+  </div>
+  <div class="card">
+    <div class="kick">Grading depth</div>
+    <div class="frow" style="margin-top:11px">
+      ${[[90, "quick"], [160, "normal"], [320, "careful"]].map(([v, l]) =>
+        `<button class="fchip ${S.reviewDepth === v ? "on" : ""}" data-a="rdepth" data-v="${v}">${l}</button>`).join("")}
+    </div>
+    <div class="tiny">Time the engine spends per move. Quick is about eight seconds a game, careful
+    about thirty, and picks up more of the close calls.</div>
+    ${reviewedCount() ? `<button class="btn wide" data-a="revreset">Grade everything again</button>` : ""}
+  </div>
+  <div class="card">
+    <div class="kick">GitHub backup</div>
+    <p class="nm">Pushes your games and grades to a file in your repo, so they survive losing the phone.
+    Free Pages repos are public, so treat anything in there as readable by anyone with the link.</p>
+    <input id="ghowner" placeholder="github username" value="${esc(S.gh.owner)}" autocapitalize="none" spellcheck="false">
+    <input id="ghrepo" placeholder="repository name" value="${esc(S.gh.repo)}" autocapitalize="none" spellcheck="false">
+    <input id="ghpath" placeholder="games.json" value="${esc(S.gh.path)}" autocapitalize="none" spellcheck="false">
+    <input id="ghtoken" type="password" placeholder="access token" value="${esc(S.gh.token)}" autocapitalize="none" spellcheck="false">
+    <div class="row">
+      <button class="btn pri grow" data-a="ghsave">Save</button>
+      <button class="btn" data-a="ghpush" ${S.busy ? "disabled" : ""}>Push</button>
+      <button class="btn" data-a="ghpull" ${S.busy ? "disabled" : ""}>Pull</button>
+    </div>
+    <div class="tiny">Make a fine grained token limited to that one repository, with read and write on
+    contents and nothing else. It is kept on this phone only, never in the repo.</div>
   </div>
   <div class="card"><div class="kick">Bot games</div>
     <p class="nm">Bot games never come through the chess.com sync. To add one, open it in the app,
@@ -2487,12 +4121,19 @@ function screenViewer() {
   const next = stops.find((x) => x > i);
   const before = i > 0 ? plies[i - 1].board : START;
 
+  const rev = revOf(g);
+  const rm = rev ? rev.m[i] : null;
   let boardStr = p.board;
   let mark = { from: p.from, to: p.to };
   if (m) mark = { target: m.sq, arrow: [m.at, m.sq], from: p.from, to: p.to,
     tone: m.k === "mm" || m.k === "am" ? "purple" : m.k === "m" ? "green" : "" };
   else if (gd && gd.sq != null) mark = { target: gd.sq, from: p.from, to: p.to, tone: "green" };
-  if (S.showBest && S.best) { boardStr = before; mark = { arrow: [S.best.from, S.best.to], target: S.best.to, tone: "green" }; }
+  if (S.showBestMove && rm && rm.b) {
+    boardStr = before;
+    mark = { arrow: [rm.b[0], rm.b[1]], target: rm.b[1], tone: "green" };
+  } else if (S.showBest && S.best) {
+    boardStr = before; mark = { arrow: [S.best.from, S.best.to], target: S.best.to, tone: "green" };
+  }
 
   const why = m ? whyFor(m, plies) : [];
   return `
@@ -2501,6 +4142,13 @@ function screenViewer() {
     <span class="chip ${g.r === "win" ? "good" : g.r === "loss" ? "bad" : "watch"}">${g.r}${g.bot ? " vs bot" : ""}</span></div>
   <div class="vtitle"><div class="h3">${g.c === "w" ? "White" : "Black"} vs ${esc(g.opp)}</div>
     <div class="tiny nm">${new Date(g.d).toLocaleDateString()} · ${esc(g.o)} · ${esc(g.end)}</div></div>
+  ${rev ? accuracyPanel(g, rev) : S.qActive === g.id
+    ? `<div class="card"><div class="kick">Grading this game</div>
+        <div class="qtrack"><i id="qbar" style="width:${S.qProg}%"></i></div>
+        <div class="tiny" id="qtxt">Working through the moves, ${S.qProg}%</div></div>`
+    : `<div class="card"><div class="kick">Not graded yet</div>
+        <p class="nm">Every move gets a grade, what you should have played, and why.</p>
+        <button class="btn pri wide" data-a="revone" data-id="${esc(g.id)}">Grade this game</button></div>`}
   ${boardSVG(boardStr, g.c === "b", { mark, inspect: S.inspect })}
   ${matBar(S.showBest ? (i > 0 ? plies[i - 1].mat : 0) : p.mat)}
   <div class="ctrls">
@@ -2509,19 +4157,28 @@ function screenViewer() {
     <button class="btn ${next !== undefined ? "pri" : ""}" data-a="jump" data-p="${next === undefined ? "" : next}" ${next === undefined ? "disabled" : ""}>Next</button>
     <button class="btn" data-a="ply" data-d="1">›</button></div>
   <div class="movelist">${plies.map((q, k) => {
-    const f = g.mis.some((x) => x.p === k), gg = (g.good || []).some((x) => x.p === k);
-    return `<button class="mvb ${k === i ? "on" : ""} ${f ? "flag" : gg ? "goodm" : ""}"
+    const r2 = rev ? rev.m[k] : null;
+    const cls = r2 ? "gr-" + REVIEW_LABELS[r2.l][2]
+      : g.mis.some((x) => x.p === k) ? "flag" : (g.good || []).some((x) => x.p === k) ? "goodm" : "";
+    return `<button class="mvb ${k === i ? "on" : ""} ${cls}"
       data-a="jump" data-p="${k}">${q.mine === (g.c === "w") ? `${q.moveNo}.` : ""}${esc(q.san)}</button>`;
   }).join("")}</div>
 
   <div class="card ${m ? "flagcard" : gd ? "win" : ""}">
     <div class="mono">${p.moveNo}${p.mine === (g.c === "w") ? "." : "..."} ${esc(mv(p.san))}
       <span class="faint">${p.mine && p.spent != null ? ` ${fmtS(p.spent)}` : ""}</span></div>
+    ${rm ? `<div class="graderow">
+      <span class="grade ${REVIEW_LABELS[rm.l][2]}">${REVIEW_LABELS[rm.l][0]}</span>
+      <span class="tiny nm">${esc(REVIEW_LABELS[rm.l][1])}${rm.o > 0.5 ? `, cost ${rm.o}% of your winning chances` : ""}</span>
+    </div>
+    ${rm.w ? `<ul class="why">${rm.w.map((w) => `<li>${esc(w)}</li>`).join("")}</ul>` : ""}
+    ${rm.b && rm.l !== "best" && rm.l !== "book" ? `<button class="btn ${S.showBestMove ? "pri" : ""} wide"
+      data-a="showbest">${S.showBestMove ? "Back to your move" : `Show ${esc(mv(rm.b[2]))} instead`}</button>` : ""}` : ""}
     ${m ? `<p class="nm">${describe(m)}</p>
       ${why.length ? `<ul class="why">${why.map((w) => `<li>${esc(w)}</li>`).join("")}</ul>` : ""}` : ""}
     ${gd ? `<p class="nm">${esc(gd.note)}</p>` : ""}
-    ${!m && !gd ? `<div class="tiny">Nothing loose here.</div>` : ""}
-    ${p.mine ? `<button class="btn ${S.showBest ? "pri" : ""} wide" data-a="best" data-i="${i}">
+    ${!m && !gd && !rm ? `<div class="tiny">Nothing loose here.</div>` : ""}
+    ${p.mine && !rm ? `<button class="btn ${S.showBest ? "pri" : ""} wide" data-a="best" data-i="${i}">
       ${S.showBest ? "Back to the game" : "What wins here?"}</button>` : ""}
     ${S.showBest && S.best ? `<div class="bestbox">
       <div class="h3">${S.best.mate ? "Mate" : S.best.gain > 0 ? `Wins ${S.best.gain} points` : "Nothing wins material"}</div>
@@ -2530,6 +4187,53 @@ function screenViewer() {
       mate, not plans.</div></div>` : ""}
   </div>
   ${S.inspect != null ? inspectNote(boardStr, S.inspect, g.c) : `<div class="tiny mid">Tap a square to see what is aiming at it.</div>`}`;
+}
+
+function accuracyPanel(g, rev) {
+  const mine = g.c === "w" ? rev.a[0] : rev.a[1];
+  const theirs = g.c === "w" ? rev.a[1] : rev.a[0];
+  const counts = (g.c === "w" ? rev.c.w : rev.c.b) || {};
+  const order = ["brilliant", "great", "best", "excellent", "good", "book", "inaccuracy", "mistake", "miss", "blunder"];
+  return `<div class="card accpanel">
+    <div class="accrow">
+      <div class="accbox"><div class="accnum">${mine == null ? "-" : mine.toFixed(1)}<i>%</i></div>
+        <div class="kick">you</div></div>
+      <div class="accsplit"></div>
+      <div class="accbox"><div class="accnum them">${theirs == null ? "-" : theirs.toFixed(1)}<i>%</i></div>
+        <div class="kick">${esc(g.opp)}</div></div>
+    </div>
+    ${evalGraph(rev, g.c === "b")}
+    <div class="gradecounts">${order.filter((k) => counts[k]).map((k) =>
+      `<span class="gc"><i class="gd ${REVIEW_LABELS[k][2]}"></i>${counts[k]} ${esc(REVIEW_LABELS[k][0].toLowerCase())}</span>`).join("")}</div>
+    <div class="tiny">Accuracy uses the win chance formulas Lichess publishes. Grades come from the
+    engine built into this app, not Stockfish, so a borderline move may be graded a step differently
+    elsewhere. Blunders and missed wins will agree.</div>
+  </div>`;
+}
+
+function evalGraph(rev, flip) {
+  const n = rev.m.length;
+  if (n < 2) return "";
+  const H = 56, W = Math.max(n, 2);
+  const cap = 600;
+  const y = (cp) => {
+    const v = Math.max(-cap, Math.min(cap, (flip ? -cp : cp) || 0));
+    return H / 2 - (v / cap) * (H / 2 - 2);
+  };
+  let path = `0,${H / 2}`;
+  rev.m.forEach((m, k) => { path += ` ${k},${y(m.c).toFixed(1)}`; });
+  path += ` ${n - 1},${H / 2}`;
+  const dots = rev.m.map((m, k) => {
+    const tone = REVIEW_LABELS[m.l][2];
+    if (!["blunder", "mistake", "miss", "brilliant", "great"].includes(m.l)) return "";
+    return `<circle cx="${k}" cy="${y(m.c).toFixed(1)}" r="1.6" class="gd ${tone}"/>`;
+  }).join("");
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" class="evalgraph">
+    <rect x="0" y="0" width="${W}" height="${H / 2}" class="evtop"/>
+    <rect x="0" y="${H / 2}" width="${W}" height="${H / 2}" class="evbot"/>
+    <polyline points="${path}" class="evline" vector-effect="non-scaling-stroke"/>
+    ${dots}</svg>
+    <div class="axis"><span>opening</span><span>the game</span><span>end</span></div>`;
 }
 
 function inspectNote(b, i, my) {
@@ -2657,20 +4361,23 @@ function render() {
   const tabs = [["home", "\u25CE", "Home"], ["games", "\u25A4", "Games"],
     ["practice", "\u2694", "Practice"], ["you", "\u2657", "You"]];
   const hideNav = S.view || (S.page && S.page !== "");
+  const key = `${S.screen}|${S.tab}|${S.page || ""}|${S.view || ""}`;
+  const enter = key !== S._key;
+  S._key = key;
 
   app.innerHTML = `
-    <header><div class="w between">
+    <header><div class="hbar">
       ${title ? `<button class="btn sm" data-a="page" data-p="">Back</button><div class="htitle">${esc(title)}</div><div class="hspace"></div>`
       : `<div><h1>${S.tab === "home" ? "Post mortem" : S.tab === "games" ? "Games" : S.tab === "practice" ? "Practice" : "You"}</h1>
-          <div class="tiny nm">${esc(S.name)}${S.games.length ? ` · ${S.games.length} games` : ""}</div></div>
+          <div class="hsub">${esc(S.name)}${S.games.length ? ` / ${S.games.length} games` : ""}</div></div>
         <div class="hbtns">
           ${S.games.length ? `<button class="btn sm" data-a="sync2" ${S.busy ? "disabled" : ""}>Refresh</button>` : ""}
           <button class="btn pri sm" data-a="file" ${S.busy ? "disabled" : ""}>Add</button></div>`}
-    </div></header>
+    </div><span class="checker thin"></span></header>
     ${S.busy ? `<div class="w"><div class="working"><span class="dot"></span>${esc(S.busy)}</div></div>` : ""}
     ${S.pick ? `<div class="w"><div class="card warn"><div class="h3">Which player are you?</div>
       <div class="pills">${S.pick.map((o) => `<button class="btn pri sm" data-a="setname" data-n="${esc(o)}">${esc(o)}</button>`).join("")}</div></div></div>` : ""}
-    <main class="w">${body}</main>
+    <main class="w${enter ? " enter" : ""}">${body}</main>
     ${S.toast ? `<div class="toast">${esc(S.toast)}</div>` : ""}
     ${S.games.length && !hideNav ? `<nav class="nav">${tabs.map(([k, g, l]) =>
       `<button data-a="tab" data-t="${k}" class="${S.tab === k ? "on" : ""}"><span class="g">${g}</span>${l}</button>`).join("")}</nav>` : ""}`;
@@ -2687,7 +4394,7 @@ document.addEventListener("click", async (e) => {
   if (a === "login") {
     const v = (document.getElementById("user") || {}).value || "";
     if (!v.trim()) return;
-    await loadUser(v); render(); await upgradeSaved(); render();
+    await loadUser(v); applyTheme(); render(); await upgradeSaved(); render();
     if (S.screen === "app" && !S.games.length) syncChessCom(6);
   }
   else if (a === "intronext") {
@@ -2704,12 +4411,31 @@ document.addEventListener("click", async (e) => {
   else if (a === "page") { S.page = el.dataset.p || null; S.view = null; render(); scrollTo(0, 0); }
   else if (a === "open") { S.view = el.dataset.id; S.ply = +(el.dataset.ply || 0); S.inspect = null; S.showBest = false; S.best = null; render(); scrollTo(0, 0); }
   else if (a === "back") { S.view = null; S.inspect = null; S.showBest = false; render(); }
-  else if (a === "ply") { S.ply += +el.dataset.d; S.showBest = false; S.best = null; render(); }
-  else if (a === "jump") { if (el.dataset.p === "") return; S.ply = +el.dataset.p; S.showBest = false; S.best = null; render(); }
+  else if (a === "ply") { S.ply += +el.dataset.d; S.showBest = false; S.showBestMove = false; S.best = null; render(); }
+  else if (a === "jump") { if (el.dataset.p === "") return; S.ply = +el.dataset.p; S.showBest = false; S.showBestMove = false; S.best = null; render(); }
   else if (a === "sq") { const i = +el.dataset.i; S.inspect = S.inspect === i ? null : i; render(); }
   else if (a === "clearsq") { S.inspect = null; render(); }
   else if (a === "more") { S.shown += 20; render(); }
   else if (a === "plain") { S.plain = !S.plain; await persist(); render(); }
+  else if (a === "theme") { S.theme = el.dataset.v; applyTheme(); await persist(); render(); }
+  else if (a === "rdepth") { S.reviewDepth = +el.dataset.v; await persist(); render(); }
+  else if (a === "revall") { queueReview(shown().map((g) => g.id)); }
+  else if (a === "revone") { queueReview([el.dataset.id]); }
+  else if (a === "revreset") {
+    for (const g of S.games) delete g.rev;
+    await persist(); queueReview(S.games.map((g) => g.id));
+  }
+  else if (a === "showbest") { S.showBestMove = !S.showBestMove; render(); }
+  else if (a === "ghsave") {
+    const v = (id) => (document.getElementById(id) || {}).value || "";
+    S.gh = { owner: v("ghowner").trim(), repo: v("ghrepo").trim(),
+      path: v("ghpath").trim() || "games.json", branch: S.gh.branch, token: v("ghtoken").trim() };
+    await persist();
+    S.toast = "Saved on this device"; render();
+    setTimeout(() => { S.toast = null; render(); }, 4000);
+  }
+  else if (a === "ghpush") ghPush();
+  else if (a === "ghpull") ghPull();
   else if (a === "paste") { const t = document.getElementById("paste"); if (t && t.value.trim()) importText(t.value); }
   else if (a === "setname") importText(S.pending, el.dataset.n);
   else if (a === "fb") {
@@ -2858,6 +4584,11 @@ document.addEventListener("touchend", (e) => {
   }
   const last = await store.get(LAST);
   if (last && last.trim()) await loadUser(last);
+  applyTheme();
+  try {
+    window.matchMedia("(prefers-color-scheme: dark)")
+      .addEventListener("change", () => { if (S.theme === "auto") applyTheme(); });
+  } catch {}
   S.ready = true;
   render();
   if (S.games.length) { await upgradeSaved(); render(); }
